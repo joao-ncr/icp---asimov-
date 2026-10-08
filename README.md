@@ -45,31 +45,6 @@ Para evitar falsas promessas ou "alucinações", a ferramenta separa estritament
 * **Testes Automatizados:** Pytest
 
 ---
-
-## 📂 Estrutura do Repositório
-
-asimov-prospector/
-├── app/                  # Código-fonte principal
-│   ├── config/           # Definições de sinais, regras e pesos de scoring
-│   ├── core/             # Configurações globais, utilitários e segurança (SSRF)
-│   ├── crawler/          # Módulos de requisição, parsing e raspagem web
-│   ├── database/         # Schema e manipulação do banco SQLite
-│   ├── discovery/        # Motores de busca, deduplicação e entrada de leads
-│   ├── extraction/       # Limpeza e tratamento de texto
-│   ├── intelligence/     # Integração com LLMs, embeddings e extrator de sinais
-│   ├── models/           # Schemas de dados e validação pydantic
-│   ├── scoring/          # Calculador de match, explicação comercial e anti-ICP
-│   └── ui/               # Interface em Streamlit
-├── data/                 # Arquivos SQLite locais e bases de exemplo/seeds
-├── docs/                 # Documentação técnica estendida (Arquitetura, Segurança, Operação)
-├── eval/                 # Scripts de avaliação de métricas e benchmark
-├── profile/              # Perfil da Asimov Jr., ICPs e regras de anotação
-├── prompts/              # Prompts estruturados para extração e queries de IA
-├── scripts/              # Scripts de inicialização rápida (.ps1, .sh, .bat)
-├── tests/                # Suíte de testes unitários, integração e e2e
-├── .env.example          # Modelo de variáveis de ambiente
-├── requirements.txt      # Dependências do projeto
-└── run.py                # Ponto de entrada para execução da aplicação
 ⚡ Manual de Instalação e Execução
 Pré-requisitos
 Python 3.10 ou superior instalado na máquina.

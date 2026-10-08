@@ -1,12 +1,21 @@
 """Fetcher responsavel: robots.txt, timeouts, limite de tamanho, retry+backoff, cache em disco,
 redirects revalidados um a um, checagem do IP efetivamente conectado (anti DNS-rebinding)."""
 from __future__ import annotations
-import json, time
+import json, os, ssl, time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 from urllib.robotparser import RobotFileParser
 import httpx
+
+try:
+    import truststore
+    truststore.inject_into_ssl()
+    _USE_SYSTEM_TRUST = True
+except Exception:
+    _USE_SYSTEM_TRUST = False
+
+import certifi
 from app.core.settings import Settings, get_settings
 from app.core.utils import sha
 from app.crawler.ssrf import UnsafeURL, validate_url, ip_is_public
@@ -32,8 +41,16 @@ class Fetcher:
         self.respect_robots = respect_robots
         self._robots: dict[str, RobotFileParser | None] = {}
         self._last: dict[str, float] = {}
-        self.stats = {"requests": 0, "cache_hits": 0, "errors": 0, "blocked_robots": 0, "unsafe": 0}
-        self.client = httpx.Client(timeout=self.s.timeout_s, follow_redirects=False,
+        self.stats = {"requests": 0, "cache_hits": 0, "errors": 0, "ssl_errors": 0, "blocked_robots": 0, "unsafe": 0}
+        # Windows/ambientes corporativos: preferimos a cadeia de certificados do SO via truststore.
+        # Se truststore nao estiver disponivel, usamos certifi. Nunca desabilitamos validacao TLS.
+        if os.getenv("SSL_CERT_FILE"):
+            verify = ssl.create_default_context(cafile=os.getenv("SSL_CERT_FILE"))
+        elif _USE_SYSTEM_TRUST:
+            verify = True
+        else:
+            verify = ssl.create_default_context(cafile=certifi.where())
+        self.client = httpx.Client(timeout=self.s.timeout_s, verify=verify, follow_redirects=False,
                                    headers={"User-Agent": self.s.user_agent, "Accept": "text/html,*/*;q=0.5",
                                             "Accept-Language": "pt-BR,pt;q=0.9"})
 
@@ -134,7 +151,13 @@ class Fetcher:
             try:
                 r = self._request(url, self.s.max_bytes)
             except (httpx.TimeoutException, httpx.TransportError) as e:
-                last = FetchResult(url, error=f"network:{type(e).__name__}")
+                # SSL/certificado e falhas de transporte sao erros por URL, nunca fatais para o lote.
+                kind = type(e).__name__
+                if "SSL" in kind or "Connect" in kind and "ssl" in str(e).lower():
+                    self.stats["ssl_errors"] += 1
+                    last = FetchResult(url, error=f"ssl:{kind}")
+                else:
+                    last = FetchResult(url, error=f"network:{kind}")
             else:
                 if r.error or r.status < 500 and r.status != 429:
                     last = r

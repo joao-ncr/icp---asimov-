@@ -74,3 +74,10 @@ Esse julgamento humano será armazenado como feedback para futuras calibrações
 Feche a interface e execute novamente `scripts/Iniciar_Asimov_Prospector.bat`.
 
 Para suporte técnico, preserve a mensagem de erro exibida na tela.
+
+
+## Tratamento de HTTPS/SSL
+
+O crawler valida certificados TLS normalmente. Em Windows e redes corporativas, a versao atual tenta usar a cadeia de certificados do sistema (`truststore`) e possui fallback para `certifi`.
+
+Um erro SSL, timeout, DNS ou transporte em uma empresa e tratado como falha daquela empresa e **nao interrompe o lote**. A analise segue para as empresas seguintes. O erro fica registrado no run para auditoria.

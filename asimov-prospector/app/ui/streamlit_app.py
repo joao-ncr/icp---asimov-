@@ -271,6 +271,9 @@ elif page == "Nova prospecção":
                         state["done"] += 1
                         if result["status"] in {"error", "blocked", "inconclusive"}:
                             state["errors"] += 1
+                        if result.get("reason", "").startswith("ssl:"):
+                            state.setdefault("ssl_errors", 0)
+                            state["ssl_errors"] += 1
                         progress.progress(state["done"] / len(candidates))
                         status_box.caption(f"Analisando {state['done']} de {len(candidates)} · {name}")
 
@@ -286,10 +289,15 @@ elif page == "Nova prospecção":
                     progress.progress(1.0)
                     status_box.empty()
                     ok = len(candidates) - state["errors"]
-                    st.success(f"Análise concluída: {ok} empresa(s) processadas. Vá para **Oportunidades** para revisar.")
+                    failed = state["errors"]
+                    if failed:
+                        st.warning(f"Análise concluída: {ok} processada(s), {failed} com ressalva. Nenhuma falha interrompeu o lote.")
+                    else:
+                        st.success(f"Análise concluída: {ok} empresa(s) processadas. Vá para **Oportunidades** para revisar.")
                     st.balloons()
         except Exception as exc:
-            st.error(f"Não foi possível ler a planilha: {exc}")
+            st.error(f"Não foi possível concluir a operação: {exc}")
+            st.caption("Se uma empresa falhar durante o acesso ao site, ela é registrada como erro e as demais continuam sendo analisadas.")
     else:
         st.divider()
         st.subheader("Quer testar só uma empresa?")

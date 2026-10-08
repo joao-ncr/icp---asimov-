@@ -46,7 +46,11 @@ class WebPageSource:
         for u in rank_links(pd["links"], max_pages - 1):
             if u.rstrip("/") == home.final_url.rstrip("/"):
                 continue
-            r = self.f.fetch(u)
+            try:
+                r = self.f.fetch(u)
+            except Exception:
+                # Falha em pagina secundaria nao invalida as paginas ja coletadas.
+                continue
             if r.ok:
                 pages.append({"url": r.final_url, "status_code": r.status, **extract_page(r.body, r.final_url)})
         return pages, None
@@ -89,9 +93,13 @@ def analyze_org(conn, org_id: int, run_id: int, source: PageSource, s: Settings,
         err = "dns_failure"          # dominio inexistente => 'sem site' (inferencia por ausencia), nao 'bloqueado'
     m["pages"] = m.get("pages", 0) + len(pages)
     unreachable = not pages
-    if unreachable and err not in ("dns_failure", "no_domain") and not (err or "").startswith("network"):
-        # bloqueado por robots / unsafe / 403: NAO tratar como "sem site"
-        status = "blocked" if err else "error"
+    if unreachable and err not in ("dns_failure", "no_domain"):
+        # Falhas de transporte/SSL sao erros daquela empresa; bloqueios de acesso
+        # continuam como blocked. Nenhum deles e tratado como "sem site".
+        if (err or "").startswith(("network:", "ssl:")):
+            status = "error"
+        else:
+            status = "blocked"
         return _save(conn, org_id, run_id, status, err, backend, {"known": known}, [], {}, m)
 
     conn.execute("DELETE FROM page WHERE org_id=?", (org_id,))
@@ -193,7 +201,19 @@ def run_pipeline(conn, candidates: list[Candidate], source: PageSource, s: Setti
     for c in candidates:
         oid, new = upsert_org(conn, c)
         metrics["new" if new else "duplicates"] += 1
-        res = analyze_org(conn, oid, run_id, source, s, embedder, metrics)
+        try:
+            res = analyze_org(conn, oid, run_id, source, s, embedder, metrics)
+        except Exception as exc:
+            # Uma empresa nunca deve abortar a rodada inteira.
+            # Registramos o erro no proprio run e seguimos para a proxima.
+            reason = f"pipeline_error:{type(exc).__name__}:{str(exc)[:240]}"
+            try:
+                backend = get_backend(s)
+                res = _save(conn, oid, run_id, "error", reason, backend, {"known": None}, [], {}, metrics)
+            except Exception:
+                conn.rollback()
+                res = {"analysis_id": None, "status": "error", "reason": reason, "org_id": oid}
+            metrics["pipeline_errors"] = metrics.get("pipeline_errors", 0) + 1
         if progress: progress(c.name, res)
     conn.execute("UPDATE search_run SET finished_at=?, metrics=? WHERE id=?", (now(), jdump(metrics), run_id))
     conn.commit()

@@ -1,0 +1,44 @@
+# ICPs = hipoteses. status: supported_by_leads | hypothesis | speculative
+# 'segments' e 'problem_terms' alimentam o gerador de queries (descoberta por problema).
+regions: ["Itajuba MG", "Sul de Minas", "Pouso Alegre MG", "Varginha MG", "Pocos de Caldas MG", "Santa Rita do Sapucai MG"]
+icps:
+  - id: ICP_E
+    name: Presenca digital
+    services: [site]
+    status: supported_by_leads   # servico mais evidente no site; leads incluem Acervatio (site), BoxGym, Gold Imoveis
+    confidence: 0.6
+    description: "Empresas locais com site ausente, desatualizado, nao responsivo ou sem captacao."
+    segments: ["clinica", "academia", "imobiliaria", "escritorio de contabilidade", "escritorio de advocacia", "clube", "loja"]
+    problem_terms: ["agende", "fale conosco whatsapp", "orcamento", "nossos servicos"]
+  - id: ICP_A
+    name: Software de gestao
+    services: [software]
+    status: hypothesis
+    confidence: 0.4
+    description: "Processos internos com muitos usuarios/unidades e controle em planilhas."
+    segments: ["distribuidora", "industria", "empresa de servicos tecnicos", "cooperativa", "associacao"]
+    problem_terms: ["controle de estoque", "gestao de contratos", "filiais", "planilhas", "ordem de servico"]
+  - id: ICP_B
+    name: Aplicativo
+    services: [aplicativo]
+    status: speculative          # dor de campo raramente aparece em site; depende de cases nao verificados
+    confidence: 0.3
+    description: "Operacao de campo, equipes externas ou relacionamento recorrente com usuarios."
+    segments: ["manutencao industrial", "engenharia", "empresa de inspecao", "saneamento", "agronegocio", "academia"]
+    problem_terms: ["equipe de campo", "inspecao", "vistoria", "visita tecnica", "agendamento"]
+  - id: ICP_C
+    name: Dados
+    services: [dados]
+    status: speculative
+    confidence: 0.3
+    description: "Operacao mensuravel com relatorios e indicadores recorrentes."
+    segments: ["industria", "logistica", "energia", "rede de lojas", "saude"]
+    problem_terms: ["relatorios", "indicadores", "dashboard", "monitoramento", "laudos"]
+  - id: ICP_D
+    name: Digitalizacao de processos
+    services: [software, aplicativo]
+    status: speculative          # baixa observabilidade em fontes publicas
+    confidence: 0.25
+    description: "Processos em papel, planilhas ou WhatsApp. Exige fontes alem do site (vagas, redes)."
+    segments: ["clinica", "construtora", "transportadora", "escola"]
+    problem_terms: ["formulario", "ficha", "planilha", "whatsapp", "aprovacao"]

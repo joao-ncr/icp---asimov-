@@ -1,0 +1,62 @@
+# Todos os numeros sao HIPOTESES a calibrar com o dataset rotulado (eval/).
+weights:                # soma = 1.0
+  best_service_fit: 0.50
+  secondary_fit: 0.15
+  viability: 0.20
+  opportunity_gap: 0.15
+evidence:
+  saturation_signals: 5       # nº de sinais distintos para evidencia "cheia"
+  saturation_pages: 3
+  min_multiplier: 0.5         # multiplicador = min + (1-min) * evidence_quality
+  injection_penalty: 0.75
+  min_distinct_signals_ranked: 1   # abaixo disso: status "inconclusive"
+  weak_fit_cap: 0.35          # fit maximo se so houver 1 sinal fraco
+  weak_signal_threshold: 0.6
+region:
+  terms: [itajuba, "sul de minas", "pouso alegre", varginha, "pocos de caldas", "santa rita do sapucai", lavras, "sao lourenco", "cachoeira de minas"]
+  bonus: 0.15
+viability:                    # calibrado a partir de docs/LEADS_INSIGHTS.md
+  base: 0.5
+  employees_sweet_spot: [5, 500]
+  sweet_spot_bonus: 0.2
+  enterprise_employees: 1000
+  enterprise_penalty: 0.4     # Helibras: grande porte sem dor solucionavel
+  enterprise_terms: [multinacional, "mais de 1000 colaboradores", "grupo com presenca global"]
+  low_budget_segments: [empresa_junior]
+  low_budget_penalty: 0.3     # Apoio Consultoria Jr / Quimica Jr: sem orcamento / nao e prioridade
+  known_no_budget_penalty: 0.25
+  ticket_band_brl: [1000, 35000]     # faixa observada em ganhos
+  ticket_sweet_spot_brl: [5000, 25000]
+anti_icp:                     # configuravel; cada regra pode ser desligada
+  exclude_known_clients: true
+  exclude_known_loss_categories: [outside_icp, no_solvable_pain, disqualified]
+  competitor_terms: ['desenvolvimento de software', 'software house', 'agencia (digital|de marketing|de publicidade)', 'criacao de sites', 'desenvolvemos (sites|aplicativos|sistemas)', 'fabrica de software']
+  competitor_min_matches: 2
+  min_text_chars: 300         # presenca publica insuficiente => inconclusive
+segments:                     # keywords -> segmento (usado so para B1 e viabilidade)
+  empresa_junior: ['empresa junior']
+  industria: [industria, industrial, fabrica, manufatura, metalurgica]
+  servicos_tecnicos: [manutencao, inspecao, engenharia, instalacao, energia solar]
+  saude: [clinica, hospital, laboratorio, odontolog]
+  educacao: [escola, faculdade, curso]
+  fitness: [academia, crossfit, personal trainer, fitness]
+  imobiliario: [imobiliaria, imoveis, corretor]
+  contabil_juridico: [contabilidade, advocacia, escritorio de advocacia]
+  logistica: [logistica, transportadora, distribuidora, frota]
+  comercio: [loja, varejo, atacado, mercado]
+  lazer_clube: [clube, turismo, hotel]
+segment_multiplier:           # aplicado ao score final; calibrado nos leads (2/2 EJs perdidas por orcamento/prioridade)
+  empresa_junior: 0.6
+sector_prior:                 # HIPOTESE inicial para o baseline B1 (setor/porte apenas)
+  industria: 0.7
+  servicos_tecnicos: 0.8
+  saude: 0.6
+  educacao: 0.5
+  fitness: 0.5
+  imobiliario: 0.5
+  contabil_juridico: 0.45
+  logistica: 0.7
+  comercio: 0.5
+  lazer_clube: 0.4
+  empresa_junior: 0.15
+  default: 0.4

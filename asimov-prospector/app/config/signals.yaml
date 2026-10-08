@@ -1,0 +1,87 @@
+# Taxonomia de sinais. Padroes aplicados a texto SEM acentos e em minusculas.
+# kind: need (indica oportunidade) | solution_present (reduz a lacuna para o servico) | context
+# source: text (frase do site, evidencia = trecho literal) | technical (checagem deterministica de HTML)
+signals:
+  - {code: OPERATIONAL_FIELD, category: OPERATIONAL_SIGNAL, kind: need, source: text, strength: 0.8, observability: media,
+     description: "Operacao de campo / equipes externas / inspecoes / visitas.",
+     interpretation: "Pode haver coleta de dados em campo e necessidade de mobilidade e centralizacao.",
+     services: {aplicativo: 0.8, software: 0.5, dados: 0.3},
+     patterns: ['equipes? (de campo|externas?)', 'atendimento em campo', 'visitas? tecnicas?', 'inspec(ao|oes)', 'vistorias?', 'tecnicos? em campo', 'servicos? em campo', 'manutenc(ao|oes) (preventivas?|corretivas?|industriais?)']}
+  - {code: OPERATIONAL_MULTI_UNIT, category: OPERATIONAL_SIGNAL, kind: need, source: text, strength: 0.6, observability: alta, min_number: 2,
+     description: "Varias unidades/filiais/lojas declaradas.",
+     interpretation: "Pode indicar complexidade operacional e necessidade de acompanhamento centralizado.",
+     services: {software: 0.6, dados: 0.6},
+     patterns: ['(\d{1,3}) (unidades|filiais|lojas|escritorios|franquias|polos|clinicas|agencias)', 'diversas unidades', 'todo o brasil']}
+  - {code: OPERATIONAL_LOGISTICS, category: OPERATIONAL_SIGNAL, kind: need, source: text, strength: 0.5, observability: media,
+     description: "Logistica, frota, entregas, rastreamento.",
+     interpretation: "Operacao logistica costuma gerar dados e demandar controle.",
+     services: {software: 0.5, dados: 0.5, aplicativo: 0.3},
+     patterns: ['logistica', 'frota', 'rastreamento', 'entregas?', 'transportadora', 'distribuidora']}
+  - {code: OPERATIONAL_INVENTORY, category: OPERATIONAL_SIGNAL, kind: need, source: text, strength: 0.6, observability: media,
+     description: "Estoque, almoxarifado, grande catalogo.",
+     interpretation: "Controle de estoque pode depender de planilhas ou sistemas desconectados.",
+     services: {software: 0.7, dados: 0.4},
+     patterns: ['estoques?', 'almoxarifado', 'armazem', 'armazenagem', 'mais de \d+ produtos', 'catalogo com \d+']}
+  - {code: MANAGEMENT_CONTRACTS, category: MANAGEMENT_SIGNAL, kind: need, source: text, strength: 0.6, observability: media,
+     description: "Contratos, carteira de clientes, associados, mensalistas.",
+     interpretation: "Gestao de muitos clientes/contratos pode se beneficiar de centralizacao.",
+     services: {software: 0.7, dados: 0.3},
+     patterns: ['gestao de contratos', 'contratos recorrentes', 'carteira de clientes', 'associados', 'mensalistas', 'assinaturas', 'locacao de', 'administracao de (imoveis|condominios)']}
+  - {code: MANAGEMENT_SCHEDULING, category: MANAGEMENT_SIGNAL, kind: need, source: text, strength: 0.5, observability: alta,
+     description: "Agendamento, reservas, ordens de servico.",
+     interpretation: "Agendamento/ordens de servico podem ser feitos manualmente (WhatsApp/telefone).",
+     services: {software: 0.5, aplicativo: 0.5, site: 0.3},
+     patterns: ['agendamentos?', 'agende (sua|seu|um)', 'reservas?', 'ordens? de servico']}
+  - {code: DATA_REPORTING, category: DATA_SIGNAL, kind: need, source: text, strength: 0.6, observability: media,
+     description: "Relatorios, laudos, indicadores, monitoramento.",
+     interpretation: "Relatorios recorrentes podem ser montados manualmente; indicadores sugerem uso de dados.",
+     services: {dados: 0.8, software: 0.4},
+     patterns: ['relatorios?', 'laudos?', 'indicadores', 'kpis?', 'monitoramento', 'acompanhamento de resultados', 'metricas']}
+  - {code: DATA_VOLUME, category: DATA_SIGNAL, kind: need, source: text, strength: 0.5, observability: baixa,
+     description: "Grande volume de dados ou historico.",
+     interpretation: "Volume de dados pode permitir analise e previsao.",
+     services: {dados: 0.8},
+     patterns: ['milhoes de', 'milhares de (clientes|pedidos|registros|atendimentos|medicoes)', 'base de dados', 'historico de']}
+  - {code: AUTOMATION_MANUAL, category: AUTOMATION_SIGNAL, kind: need, source: text, strength: 0.7, observability: baixa,
+     description: "Mencao a planilhas, papel, processo manual, WhatsApp operacional.",
+     interpretation: "Processo possivelmente manual/fragmentado; digitalizacao pode reduzir retrabalho.",
+     services: {software: 0.8, aplicativo: 0.4, dados: 0.4},
+     patterns: ['planilhas?', 'processos? manuais?', 'controle manual', 'em papel', 'fichas? de papel', 'pelo whatsapp', 'via whatsapp']}
+  - {code: MOBILE_CUSTOMER, category: MOBILE_SIGNAL, kind: need, source: text, strength: 0.4, observability: baixa,
+     description: "Relacionamento recorrente com usuarios (pedidos, acompanhamento, pacientes, alunos).",
+     interpretation: "Pode haver espaco para canal mobile com o cliente.",
+     services: {aplicativo: 0.6, software: 0.2},
+     patterns: ['acompanhe (seu|seus|sua|suas)', 'pedidos online', 'delivery', 'alunos', 'pacientes', 'clientes recorrentes']}
+  - {code: GROWTH_SIGNAL, category: GROWTH_SIGNAL, kind: context, source: text, strength: 0.3, observability: media,
+     description: "Vagas, expansao, nova unidade.",
+     interpretation: "Crescimento pode indicar capacidade de investir (contexto, nao dor).",
+     services: {},
+     patterns: ['trabalhe conosco', 'estamos contratando', 'expansao', 'nova unidade']}
+  - {code: TECH_HAS_APP, category: TECHNOLOGY_SIGNAL, kind: solution_present, source: text, strength: 0.7, observability: alta,
+     description: "Ja possui aplicativo.", interpretation: "Reduz a lacuna para aplicativo.",
+     reduces: {aplicativo: 0.7}, services: {},
+     patterns: ['baixe (o|nosso) (app|aplicativo)', 'google play', 'app store', 'nosso aplicativo', 'disponivel (no|na) (google play|app store)']}
+  - {code: TECH_HAS_PORTAL, category: TECHNOLOGY_SIGNAL, kind: solution_present, source: text, strength: 0.6, observability: alta,
+     description: "Ja possui portal/area do cliente.", interpretation: "Reduz a lacuna para software/app de relacionamento.",
+     reduces: {software: 0.4, aplicativo: 0.4}, services: {},
+     patterns: ['area do cliente', 'portal do cliente', 'portal de (clientes|servicos)', 'acesse sua conta']}
+  - {code: TECH_HAS_ERP, category: TECHNOLOGY_SIGNAL, kind: solution_present, source: text, strength: 0.6, observability: media,
+     description: "Menciona ERP/CRM/sistema proprio.", interpretation: "Possivel sistema ja existente; lacuna menor para software de gestao.",
+     reduces: {software: 0.6}, services: {},
+     patterns: ['erp', 'crm', 'sistema proprio', 'software de gestao', 'plataforma propria', 'totvs', 'sap']}
+  # Sinais tecnicos (checagem deterministica do HTML; tipo absence_inference)
+  - {code: DIGITAL_NO_SITE, category: DIGITAL_SIGNAL, kind: need, source: technical, strength: 0.9, observability: alta,
+     description: "Dominio ausente ou inacessivel.", interpretation: "Possivel ausencia de presenca digital propria (pode ser falha transitoria).",
+     services: {site: 0.9}, patterns: []}
+  - {code: DIGITAL_NO_VIEWPORT, category: DIGITAL_SIGNAL, kind: need, source: technical, strength: 0.6, observability: alta,
+     description: "Pagina sem meta viewport.", interpretation: "Site possivelmente nao responsivo.",
+     services: {site: 0.7}, patterns: []}
+  - {code: DIGITAL_NO_HTTPS, category: DIGITAL_SIGNAL, kind: need, source: technical, strength: 0.4, observability: alta,
+     description: "Site servido sem HTTPS.", interpretation: "Site possivelmente desatualizado/sem manutencao.",
+     services: {site: 0.5}, patterns: []}
+  - {code: DIGITAL_NO_CAPTURE, category: DIGITAL_SIGNAL, kind: need, source: technical, strength: 0.5, observability: alta,
+     description: "Sem formulario nem link de WhatsApp.", interpretation: "Captacao digital de contatos possivelmente fraca.",
+     services: {site: 0.6}, patterns: []}
+  - {code: DIGITAL_STALE_COPYRIGHT, category: DIGITAL_SIGNAL, kind: need, source: technical, strength: 0.5, observability: alta,
+     description: "Copyright com ano antigo (3+ anos).", interpretation: "Site possivelmente sem manutencao recente.",
+     services: {site: 0.6}, patterns: []}

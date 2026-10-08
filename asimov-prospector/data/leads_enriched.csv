@@ -1,0 +1,9 @@
+name,domain,segment,size,outcome,services_bought,notes
+Diavicon,,,,won,,preencher dominio/segmento para o backtest (python run.py backtest-leads)
+Authana,,,,won,,
+JMorais,,,,won,,
+Helibras,,industria,grande,lost,,perdido: sem dor solucionavel
+BoxGym,,fitness,,lost,,perdido: sem orcamento
+Gold Imoveis,,imobiliario,,lost,,
+Clube Campestre,,lazer_clube,,lost,,
+Gelcam,,,,lost,,perdido: sem orcamento

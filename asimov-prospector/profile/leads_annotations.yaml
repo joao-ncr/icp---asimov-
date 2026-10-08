@@ -1,0 +1,21 @@
+# Anotacoes manuais sobre leads.xlsx (a planilha nao tem setor nem dominio).
+# LGPD: pessoas fisicas sao pseudonimizadas; nomes de vendedores nao sao importados.
+persons: ["Lucas Arante Araujo", "Diego Schardong", "Giovanni"]
+title_overrides:
+  "Authana - Luan": "Authana"
+  "Rota Das Pedras - Carlos": "Rota das Pedras"
+  "Site - Acervatio": "Acervatio"
+  "Advocacia": "Advocacia (lead sem nome de empresa)"
+# segment: chute a partir do NOME (confianca baixa) - a equipe deve confirmar em data/leads_enriched.csv
+segments:
+  "BoxGym": fitness
+  "Gold Imoveis": imobiliario
+  "Janilton Contabilidade": contabil_juridico
+  "Laureano Contabilidade Ltda.": contabil_juridico
+  "Advocacia (lead sem nome de empresa)": contabil_juridico
+  "ZapFit": fitness
+  "Helibras": industria
+  "Clube Campestre": lazer_clube
+  "Apoio Consultoria Jr": empresa_junior
+  "Quimica Jr": empresa_junior
+  "D3 Energias": servicos_tecnicos

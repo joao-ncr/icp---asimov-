@@ -1,0 +1,46 @@
+# Perfil estruturado da Asimov Jr. (fonte: asimovjr.com.br + briefing + leads.xlsx).
+# Itens com verified: false vieram do briefing e NAO foram confirmados no site publico.
+organization: Asimov Jr.
+type: Empresa Junior de Tecnologia (UNIFEI)
+location: Itajuba - MG
+site: https://asimovjr.com.br/
+positioning: "Do pequeno negocio a grande industria (declarado no site)."
+delivery_constraints:
+  - "Equipe de discentes com orientacao de mestres/doutores; capacidade de entrega limitada e ciclo ligado ao semestre."
+  - "Ticket historico observado nos leads: R$ 1 mil a R$ 34,2 mil (ver docs/LEADS_INSIGHTS.md)."
+services:
+  - id: site
+    name: Sites
+    stack: [WordPress]
+    problems_solved: [presenca digital fraca, site desatualizado ou nao responsivo, baixa captacao de leads]
+    hypothesis_template: "O site publico apresenta indicios ({signals}) que podem indicar oportunidade de modernizacao da presenca digital e da captacao de contatos."
+  - id: aplicativo
+    name: Aplicativos
+    stack: [Flutter, Firebase, MongoDB, React Native]
+    problems_solved: [coleta de dados em campo, relacionamento recorrente com usuarios, formularios moveis, sincronizacao offline]
+    hypothesis_template: "A empresa descreve {signals}, o que pode indicar oportunidade de um aplicativo para coleta/relacionamento (a confirmar em diagnostico)."
+  - id: software
+    name: Softwares personalizados
+    stack: [Angular, Firebase, MongoDB]
+    problems_solved: [gestao interna, automacao de processos, controle de usuarios, centralizacao de informacao]
+    hypothesis_template: "Os sinais ({signals}) sugerem processos que podem se beneficiar de um sistema de gestao proprio ou da centralizacao de informacoes."
+  - id: dados
+    name: Ciencia e analise de dados
+    stack: [Python, Power BI, Machine Learning]
+    problems_solved: [relatorios manuais, falta de indicadores, decisao sem apoio de dados, previsao]
+    hypothesis_template: "A presenca de {signals} pode indicar oportunidade de dashboards/automacao de relatorios e analise de dados."
+case_studies:
+  - {id: sanfran, client: SanFran Jr. (FDUSP), service: site, problem: "site institucional completo (design a desenvolvimento)", verified: true, source: asimovjr.com.br}
+  - {id: engepro, client: EngePro, service: site, problem: captacao de clientes, verified: false, source: briefing}
+  - {id: consea, client: Consea Junior, service: site, problem: captacao de clientes, verified: false, source: briefing}
+  - {id: dip, client: DIP, service: aplicativo, problem: "gestao de imoveis e contratos", capabilities: [aplicativo, gestao, dados], verified: false, source: briefing}
+  - {id: softcare, client: Soft Care, service: aplicativo, problem: saude / formularios, verified: false, source: briefing}
+  - {id: arborizai, client: ArborizAI, service: aplicativo, problem: "coleta de dados em campo e processamento de midias", capabilities: [aplicativo, dados, ia], verified: false, source: briefing}
+  - {id: ambev, client: AMBEV, service: software, problem: "estoque/operacao com acompanhamento em tempo real", capabilities: [software, dashboard, alta disponibilidade], verified: false, source: briefing}
+  - {id: ejeq, client: EJEQ, service: software, problem: "organizacao de conhecimento, busca e IA", verified: false, source: briefing}
+anti_profiles:
+  - "Concorrentes (software house, agencia de sites)."
+  - "Clientes atuais (status Ganha)."
+  - "Empresa junior e perfis sem orcamento aparente (motivo de perda mais frequente nos leads)."
+  - "Grande empresa sem dor identificavel (ex.: Helibras: 'nao possui dor que conseguimos solucionar')."
+  - "Leads ja descartados como fora do ICP."

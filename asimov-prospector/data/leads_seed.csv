@@ -1,0 +1,22 @@
+name,outcome,value,funnel,loss_reason,loss_category,segment,is_person,created_month
+Jmorais,won,5500.0,passivo,,,desconhecido,0,2026-02
+Diavicon,won,25000.0,passivo,,,desconhecido,0,2026-02
+Pessoa fisica #1,won,1000.0,passivo,,,desconhecido,1,2026-06
+Authana,won,34200.0,passivo,,,desconhecido,0,2026-08
+Boxgym,lost,15000.0,ativo,Não possui orçamento,no_budget,fitness,0,2026-02
+Gold Imoveis,lost,10800.0,ativo,Sem contato a mais de 10 dias,no_response,imobiliario,0,2026-02
+Acervatio,lost,0.0,ativo,Não consegui mais contato,no_response,desconhecido,0,2026-04
+Clube Campestre,lost,20000.0,ativo,Não é prioridade,not_priority,lazer_clube,0,2026-05
+Janilton Contabilidade,lost,0.0,ativo,Não quis ouvir,no_response,contabil_juridico,0,2026-06
+Laureano Contabilidade Ltda.,lost,0.0,ativo,Não consegui mais contato,no_response,contabil_juridico,0,2026-07
+Gelcam,lost,7000.0,passivo,Não possui orçamento,no_budget,desconhecido,0,2026-01
+Zapfit,lost,0.0,passivo,Sem resposta | Está fora do ICP,outside_icp,fitness,0,2026-02
+Apoio Consultoria Jr,lost,3600.0,passivo,Não possui orçamento,no_budget,empresa_junior,0,2026-02
+D3 Energias,lost,5500.0,passivo,Sem resposta | Não respondeu,no_response,servicos_tecnicos,0,2026-03
+Rota das Pedras,lost,0.0,passivo,Não aceitou termo do contrato,contract_terms,desconhecido,0,2026-03
+Pessoa fisica #2,lost,22000.0,passivo,Sem resposta | Não possui orçamento,no_budget,desconhecido,1,2026-03
+Helibras,lost,13500.0,passivo,Não possui dor que conseguimos solucionar,no_solvable_pain,industria,0,2026-04
+Santuário Da Agonia,lost,13500.0,passivo,Sem resposta | Não possui orçamento,no_budget,desconhecido,0,2026-04
+Pessoa fisica #3,lost,0.0,passivo,Lead desqualificado,disqualified,desconhecido,1,2026-05
+Advocacia (lead sem nome de empresa),lost,0.0,passivo,Não respondeu,no_response,contabil_juridico,0,2026-06
+Quimica Jr,lost,1200.0,passivo,Não é prioridade,not_priority,empresa_junior,0,2026-06

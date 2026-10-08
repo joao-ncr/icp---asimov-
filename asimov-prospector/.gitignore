@@ -1,0 +1,9 @@
+.env
+data/*.db
+data/cache/
+data/leads.xlsx
+__pycache__/
+.pytest_cache/
+eval/labels_blind.csv
+data/prospects_report.csv
+data/demo.db

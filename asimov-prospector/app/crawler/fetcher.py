@@ -121,7 +121,8 @@ class Fetcher:
             r = self._request(origin + "/robots.txt", 200_000)
             rp = RobotFileParser()
             if r.error:
-                self._robots[origin] = None if not r.error.startswith("unsafe") else RobotFileParser()
+                error_text = str(r.error or "")
+                self._robots[origin] = None if not error_text.startswith("unsafe") else RobotFileParser()
             elif r.status == 200:
                 rp.parse(r.body.splitlines())
                 self._robots[origin] = rp

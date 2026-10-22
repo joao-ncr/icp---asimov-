@@ -38,6 +38,28 @@ class Candidate(BaseModel):
     source: str = "manual"
 
 
+class HistoricalLead(BaseModel):
+    """Linha da base historica de prospeccao. Sem telefone/decisor/socios (LGPD)."""
+    source_id: Optional[int] = None
+    candidate: Candidate
+    segment_label: Optional[str] = None
+    capital_social: Optional[float] = None
+    digital_maturity: Optional[str] = None
+    best_offer: Optional[str] = None
+    suggested_service: Optional[str] = None
+    identity_confidence: Optional[str] = None
+    registration_alert: Optional[str] = None
+    cnpj_suspect: bool = False
+    ticket_filter: Optional[str] = None
+    ticket_reason: Optional[str] = None
+    priority: Optional[str] = None
+    tier: Optional[str] = None
+    legacy_score: Optional[float] = None
+    legacy_components: dict[str, float] = {}
+    commercial_status: Optional[str] = None
+    loss_reason: Optional[str] = None
+
+
 class PageData(BaseModel):
     url: str
     status_code: int = 200

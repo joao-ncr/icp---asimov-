@@ -1,5 +1,7 @@
 from __future__ import annotations
 import hashlib, json, re, unicodedata
+from difflib import SequenceMatcher
+from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlparse
 import yaml
@@ -30,6 +32,32 @@ def norm_domain(url_or_domain: str | None) -> str | None:
     host = (urlparse(u).hostname or "").lower()
     host = host[4:] if host.startswith("www.") else host
     return host or None
+
+
+@lru_cache
+def _platform_hosts() -> tuple[str, ...]:
+    from app.core.settings import get_settings   # import tardio: settings nao deve ser carregado so por importar utils
+    return tuple(load_yaml(get_settings().config_dir / "platforms.yaml")["hosts"])
+
+
+def is_platform_domain(domain: str | None) -> bool:
+    """True para redes sociais/diretorios: o host e compartilhado por varias empresas."""
+    return bool(domain) and any(domain == h or domain.endswith("." + h) for h in _platform_hosts())
+
+
+def identity_domain(url_or_domain: str | None) -> str | None:
+    """Dominio proprio da empresa (usado em dedup e crawl); None se vazio ou se for plataforma compartilhada."""
+    d = norm_domain(url_or_domain)
+    return None if is_platform_domain(d) else d
+
+
+def similarity(a: str, b: str, floor: float = 0.0) -> float:
+    """SequenceMatcher.ratio() com poda: se um limite superior barato ja fica abaixo de `floor`, devolve 0.0.
+    Resultado identico a ratio() sempre que ele seria >= floor."""
+    m = SequenceMatcher(None, a, b)
+    if m.real_quick_ratio() < floor or m.quick_ratio() < floor:
+        return 0.0
+    return m.ratio()
 
 
 def sha(s: str) -> str:

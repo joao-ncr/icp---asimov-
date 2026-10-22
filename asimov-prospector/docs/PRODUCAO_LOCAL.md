@@ -51,7 +51,7 @@ Use esse modo para validar uma hipótese antes de aumentar o lote.
 
 ### 4. Feedback
 
-Na aba **Empresa**, classifique cada prospect. Os rótulos não alteram o score automaticamente: primeiro acumulam evidência para calibração. Isso evita overfitting em poucas observações.
+Na tela **Avaliar**, classifique cada prospect como Boa, Neutra ou Ruim. Abaixo de 30 avaliações (com ao menos 5 boas e 5 ruins) os rótulos só acumulam e não alteram o score; depois disso o ajuste é limitado e encolhido (ver `calibration` em `app/config/scoring.yaml`), o que evita overfitting em poucas observações.
 
 ## Critério de sucesso
 

@@ -1,8 +1,8 @@
-"""Metricas de ranking. Grades: excelente=4, bom=3, mediano=2, ruim=1, sem_fit=0. Relevante = grade >= 3."""
+"""Metricas de ranking. Grades: excelente=4, bom=3, mediano=2, ruim=1, sem_fit=0; niveis do time: boa=4, neutra=2, ruim=1. Relevante = grade >= 3."""
 from __future__ import annotations
 import math, random
 
-GRADES = {"excelente": 4, "bom": 3, "mediano": 2, "ruim": 1, "sem_fit": 0}
+GRADES = {"excelente": 4, "bom": 3, "mediano": 2, "ruim": 1, "sem_fit": 0, "boa": 4, "neutra": 2}   # boa/neutra/ruim = 3 niveis do time comercial
 REL_MIN = 3
 
 

@@ -34,3 +34,18 @@ CREATE INDEX IF NOT EXISTS ix_page_org ON page(org_id);
 CREATE INDEX IF NOT EXISTS ix_analysis_org ON analysis(org_id);
 CREATE INDEX IF NOT EXISTS ix_evidence_an ON evidence(analysis_id);
 CREATE INDEX IF NOT EXISTS ix_score_an ON score(analysis_id);
+-- Base historica de prospeccao (planilha padronizada): contexto por empresa que o modelo consome.
+-- LGPD: telefone, decisor e socios NAO sao importados (ver docs/SEGURANCA_LGPD.md).
+CREATE TABLE IF NOT EXISTS lead_history (id INTEGER PRIMARY KEY AUTOINCREMENT, org_id INTEGER NOT NULL UNIQUE REFERENCES organization(id),
+  source_id INTEGER, segment_label TEXT, capital_social REAL, digital_maturity TEXT, best_offer TEXT, suggested_service TEXT,
+  identity_confidence TEXT, registration_alert TEXT, cnpj_suspect INTEGER DEFAULT 0, ticket_filter TEXT, ticket_reason TEXT,
+  priority TEXT, tier TEXT, legacy_score REAL, legacy_components TEXT, commercial_status TEXT, loss_reason TEXT, imported_at TEXT);
+CREATE INDEX IF NOT EXISTS ix_lead_history_service ON lead_history(suggested_service);
+-- Uma unica rodada de analise por vez (vale entre abas e processos). Linha unica; heartbeat evita trava eterna apos crash.
+CREATE TABLE IF NOT EXISTS run_lock (id INTEGER PRIMARY KEY CHECK (id = 1), owner TEXT, label TEXT, started_at TEXT, heartbeat_at TEXT);
+-- Aprendizado a partir do feedback humano: cada linha e um ajuste auditavel (params = multiplicadores por sinal/segmento).
+CREATE TABLE IF NOT EXISTS calibration (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT, n_labels INTEGER,
+  last_feedback_id INTEGER, active INTEGER DEFAULT 0, params TEXT);
+CREATE INDEX IF NOT EXISTS ix_analysis_org_status ON analysis(org_id, status, id);
+CREATE INDEX IF NOT EXISTS ix_score_an_svc ON score(analysis_id, service_id);
+CREATE INDEX IF NOT EXISTS ix_feedback_org ON human_feedback(org_id, id);

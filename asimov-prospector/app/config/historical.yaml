@@ -1,0 +1,10 @@
+# Regras de negocio da base historica de prospeccao (fora do codigo).
+# "Melhor oferta" da planilha -> servico do motor (site | aplicativo | software | dados).
+offer_to_service:
+  sites: site
+  aplicacao web: software
+  aplicacao desktop: software
+  mobile: aplicativo
+  ciencia de dados: dados
+# Alertas de cadastro que invalidam o CNPJ como chave de identidade (pode ser de outra empresa).
+cnpj_suspect_prefixes: [atencao]

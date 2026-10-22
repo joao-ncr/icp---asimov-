@@ -45,6 +45,11 @@ segments:                     # keywords -> segmento (usado so para B1 e viabili
   logistica: [logistica, transportadora, distribuidora, frota]
   comercio: [loja, varejo, atacado, mercado]
   lazer_clube: [clube, turismo, hotel]
+segment_labels:              # rotulos curtos de planilhas (ex.: 'Oficina mecanica') -> segmento; so vale para rotulos, nunca para texto de site
+  industria: [marcenaria, marceneiro, moveleiro, serralheria, tornearia, soldador, usina mec, usina de aco, maquinario, metais, compressor, motores, moveis planejados]
+  servicos_tecnicos: [energia, engenheiro, oficina, assistencia tecnica, eletricista, construtora, construcao civil, topografia, terraplenagem, reboque, reparos, conserto, mecanico, automacao, empilhadeira, guindaste, fotovoltaica, consultor ambiental, seguranca ocupacional]
+  educacao: [educacional, universidade]
+  contabil_juridico: [contabil, contador]
 segment_multiplier:           # aplicado ao score final; calibrado nos leads (2/2 EJs perdidas por orcamento/prioridade)
   empresa_junior: 0.6
 sector_prior:                 # HIPOTESE inicial para o baseline B1 (setor/porte apenas)
@@ -60,3 +65,11 @@ sector_prior:                 # HIPOTESE inicial para o baseline B1 (setor/porte
   lazer_clube: 0.4
   empresa_junior: 0.15
   default: 0.4
+calibration:                  # HIPOTESES: aprendizado so ativa com avaliacoes suficientes; ajustes encolhidos e limitados (anti-overfitting)
+  min_labels: 30              # avaliacoes (1 por empresa, a mais recente) para ativar o ajuste
+  min_per_class: 5            # minimo de avaliacoes 'boa' e de 'ruim' (evita aprender de uma classe so)
+  min_group_n: 5              # leads COM e SEM o sinal/segmento necessarios para estimar o efeito
+  shrinkage_k: 10             # encolhimento: efeito = n/(n+k) do desvio observado
+  gain: 0.5                   # sensibilidade do multiplicador ao desvio de satisfacao (-1..1)
+  bounds: [0.8, 1.2]          # multiplicador final por sinal/segmento
+  lead_generation_min_labels: 100   # volume minimo para comecar a gerar leads novos com os parametros aprendidos

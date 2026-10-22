@@ -18,7 +18,7 @@ def config_hash() -> str:
     return sha(open(get_settings().config_dir / "scoring.yaml", encoding="utf-8").read())[:12]
 
 
-def service_fits(hits: dict[str, SignalHit]) -> tuple[dict[str, float], dict[str, list[str]]]:
+def service_fits(hits: dict[str, SignalHit], calibration=None) -> tuple[dict[str, float], dict[str, list[str]]]:
     """noisy-OR por servico sobre sinais do tipo 'need'. Poucos sinais fracos => fit limitado (weak_fit_cap)."""
     c = cfg()["evidence"]
     fits, why = {}, {}
@@ -30,7 +30,8 @@ def service_fits(hits: dict[str, SignalHit]) -> tuple[dict[str, float], dict[str
                 continue
             w = sig["services"].get(svc, 0)
             if w:
-                contribs.append((code, w * h.strength * h.confidence))
+                learned = calibration.for_signal(code) if calibration else 1.0      # ajuste aprendido do feedback humano
+                contribs.append((code, min(0.99, w * h.strength * h.confidence * learned)))
         p = 1.0
         for _, x in contribs:
             p *= 1 - x
@@ -51,14 +52,27 @@ def opportunity_gap(hits: dict[str, SignalHit], svc: str) -> float:
     return clamp(1 - presence)
 
 
-def detect_segment(text: str, org_segment: str | None = None) -> str:
-    if org_segment:
-        return org_segment
+def _match_segment(text: str, section: str = "segments") -> str | None:
     t = norm_text(text)
-    for seg, kws in cfg()["segments"].items():
+    for seg, kws in cfg().get(section, {}).items():
         if any(k in t for k in kws):
             return seg
-    return "default"
+    return None
+
+
+def canonical_segment(label: str | None) -> str | None:
+    """Rotulo livre (ex.: 'Imobiliária') -> chave de segmento do scoring (ex.: 'imobiliario')."""
+    if not label:
+        return None
+    key = norm_text(label).replace(" ", "_")
+    if key in cfg()["segments"]:
+        return key
+    return _match_segment(label, "segment_labels") or _match_segment(label)
+
+
+def detect_segment(text: str, org_segment: str | None = None) -> str:
+    # Rotulo informado vence a inferencia por texto; rotulo desconhecido nao pode virar chave invalida.
+    return canonical_segment(org_segment) or _match_segment(text) or "default"
 
 
 def viability(facts: dict, text: str, segment: str, known: dict | None, org: dict | None = None) -> tuple[float, list[str]]:
@@ -101,9 +115,9 @@ def evidence_quality(hits: dict[str, SignalHit], pages: int, injection_flags: in
     return round(eq, 3), round(mult, 3)
 
 
-def compute_scores(hits, facts, text, pages, injection_flags, segment, known=None, org=None) -> dict:
+def compute_scores(hits, facts, text, pages, injection_flags, segment, known=None, org=None, calibration=None) -> dict:
     c = cfg()
-    fits, why = service_fits(hits)
+    fits, why = service_fits(hits, calibration)
     order = sorted(SERVICES, key=lambda s: -fits[s])
     best, rest = order[0], order[1:3]
     secondary = sum(fits[s] for s in rest) / max(1, len(rest))
@@ -112,11 +126,12 @@ def compute_scores(hits, facts, text, pages, injection_flags, segment, known=Non
     eq, mult = evidence_quality(hits, pages, injection_flags)
     w = c["weights"]
     base = w["best_service_fit"] * fits[best] + w["secondary_fit"] * secondary + w["viability"] * via + w["opportunity_gap"] * gap
-    final = round(100 * base * mult * c.get("segment_multiplier", {}).get(segment, 1.0), 1)
+    learned_segment = calibration.for_segment(segment) if calibration else 1.0
+    final = round(100 * base * mult * c.get("segment_multiplier", {}).get(segment, 1.0) * learned_segment, 1)
     b1 = round(100 * (0.6 * c["sector_prior"].get(segment, c["sector_prior"]["default"]) + 0.4 * via), 1)   # baseline setor/porte
     distinct = len({x.signal_code for h in hits.values() if h.kind == "need" for x in h.evidence if x.verified})
     return {"service_scores": {s: round(100 * fits[s] * mult, 1) for s in SERVICES}, "service_fit_raw": fits, "best_service": best,
             "signals_by_service": why, "viability": via, "viability_notes": via_notes, "opportunity_gap": round(gap, 3),
             "evidence_quality": eq, "evidence_multiplier": mult, "final": final, "baseline_b1": b1,
-            "need_signals_verified": distinct, "segment": segment,
+            "need_signals_verified": distinct, "segment": segment, "calibration_version": calibration.version if calibration and calibration.active else 0,
             "components": {"best_fit": round(fits[best], 3), "secondary_fit": round(secondary, 3), "viability": via, "gap": round(gap, 3)}}

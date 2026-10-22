@@ -34,17 +34,27 @@ O sistema aceita `.xlsx` e `.csv`.
 
 ## Como interpretar o resultado
 
-### Fit
+### Pontuação
 
 É uma nota de compatibilidade com uma oportunidade para a Asimov. **Não é probabilidade de fechamento.**
+O ranking mostra só o que é verificável (pontuação, oportunidade, hipótese e evidências); rótulos de "confiança" foram retirados
+até haver avaliações suficientes para sustentá-los estatisticamente.
 
-### Confiança
+### Sua avaliação (3 níveis)
 
-Indica quão bem sustentado está o resultado pelas evidências encontradas.
+Para cada empresa do ranking, o time comercial responde: **👍 Boa oportunidade**, **😐 Neutra** ou **👎 Ruim**.
+Essas respostas ficam gravadas e alimentam o aprendizado do sistema.
 
-- **Alta**: múltiplas evidências relevantes.
-- **Média**: evidência suficiente, mas incompleta.
-- **Baixa**: oportunidade fraca ou com pouca evidência.
+### Aprendizado do ranking
+
+Com 30 avaliações (ao menos 5 "boas" e 5 "ruins") o sistema passa a ajustar, de forma limitada e auditável, o peso dos sinais e
+segmentos que o time aprovou ou rejeitou. Depois de cada nova avaliação ativa, a tela **Ranking** oferece
+"Aplicar aprendizado ao ranking" (reprocessa sem acessar os sites). A geração de leads novos com os parâmetros aprendidos
+fica para quando houver 100 avaliações.
+
+### Uma análise por vez
+
+Só uma rodada roda de cada vez (mesmo com várias abas abertas). Leads de nome ou site muito parecidos são analisados uma única vez.
 
 ### Hipótese comercial
 

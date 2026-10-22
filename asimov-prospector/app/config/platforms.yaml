@@ -1,0 +1,4 @@
+# Hosts de redes sociais, encurtadores e diretorios: nao identificam UMA empresa (varias empresas compartilham o host).
+# Nao servem como chave de deduplicacao nem como alvo de crawl.
+hosts: [instagram.com, facebook.com, linkedin.com, youtube.com, tiktok.com, twitter.com, x.com, linktr.ee, wa.me, whatsapp.com,
+        api.whatsapp.com, clickdisk.com.br, google.com, goo.gl, maps.app.goo.gl, bit.ly]

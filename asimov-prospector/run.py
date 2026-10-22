@@ -9,8 +9,10 @@ from app.core.utils import jdump, norm_domain
 from app.database.db import connect, init_db, now
 from app.discovery import leads as leadsmod, queries as qmod, sources
 from app.discovery.dedup import upsert_org
+from app.feedback.store import learning_status, record_feedback
 from app.models.schemas import Candidate
-from app.pipeline import FixtureSource, WebPageSource, analyze_org, ranking, run_pipeline, start_run
+from app.scoring.calibration import LEVELS
+from app.pipeline import FixtureSource, WebPageSource, analyze_org, ranking, reapply_learning, run_pipeline, start_run
 from app.scoring.score import SERVICES
 
 
@@ -167,9 +169,16 @@ def confidence_label(mult, explanation):
 
 def cmd_feedback(a):
     c = db()
-    an = c.execute("SELECT MAX(id) FROM analysis WHERE org_id=?", (a.org,)).fetchone()[0]
-    c.execute("INSERT INTO human_feedback(org_id,analysis_id,quality,status,reason,author,created_at) VALUES(?,?,?,?,?,?,?)", (a.org, an, a.quality, a.status, a.reason, a.author, now()))
-    c.commit(); print("feedback registrado")
+    an = c.execute("SELECT MAX(id) FROM analysis WHERE org_id=? AND status='ranked'", (a.org,)).fetchone()[0]
+    if an is None: sys.exit("Essa empresa ainda não tem análise ranqueada para avaliar.")
+    record_feedback(c, a.org, an, a.quality, a.reason, a.author); print("feedback registrado")
+
+
+def cmd_learning(a):
+    """Quanto feedback ja existe e se o aprendizado esta ativo; --apply reaplica o aprendizado ao ranking (sem rede)."""
+    c = db(); print(json.dumps(learning_status(c), indent=1, ensure_ascii=False))
+    if a.apply:
+        rid = reapply_learning(c, get_settings()); print("ranking reprocessado na rodada", rid)
 
 
 def cmd_export_labels(a):
@@ -182,7 +191,7 @@ def cmd_export_labels(a):
     with open(a.out, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f); w.writerow(["domain", "name", "label", "rater", "notes"])
         for r in items: w.writerow([r["domain"], r["name"], "", "", ""])
-    print(f"{len(items)} empresas em {a.out}. Preencha 'label' (excelente|bom|mediano|ruim|sem_fit) e 'rater'.")
+    print(f"{len(items)} empresas em {a.out}. Preencha 'label' (boa|neutra|ruim) e 'rater'.")
 
 
 def cmd_eval(a):
@@ -218,7 +227,7 @@ def cmd_purge(a):
 
 
 def cmd_ui(a):
-    subprocess.run([sys.executable, "-m", "streamlit", "run", str(ROOT / "app" / "ui" / "streamlit_app.py")])
+    subprocess.run([sys.executable, "-m", "streamlit", "run", str(ROOT / "app" / "ui" / "streamlit_app.py")], cwd=ROOT)   # cwd: carrega .streamlit/config.toml
 
 
 def main():
@@ -235,8 +244,9 @@ def main():
     x = sp.add_parser("rank"); x.add_argument("--service", choices=SERVICES); x.add_argument("--top", type=int, default=20); x.add_argument("--export"); x.set_defaults(f=cmd_rank)
     x = sp.add_parser("report"); x.add_argument("--service", choices=SERVICES); x.add_argument("--top", type=int, default=20); x.add_argument("--out", default="data/prospects_report.csv"); x.set_defaults(f=cmd_report)
     x = sp.add_parser("feedback"); x.add_argument("--org", type=int, required=True)
-    x.add_argument("--quality", choices=["excelente", "bom", "mediano", "ruim", "sem_fit"], required=True)
-    x.add_argument("--status", default="novo", choices=["novo", "ja_conhecemos", "ja_e_cliente", "descartar", "contatar"]); x.add_argument("--reason", default=""); x.add_argument("--author", default=""); x.set_defaults(f=cmd_feedback)
+    x.add_argument("--quality", choices=list(LEVELS), required=True)
+    x.add_argument("--reason", default=""); x.add_argument("--author", default=""); x.set_defaults(f=cmd_feedback)
+    x = sp.add_parser("learning"); x.add_argument("--apply", action="store_true"); x.set_defaults(f=cmd_learning)
     x = sp.add_parser("export-labels"); x.add_argument("--k", type=int, default=20); x.add_argument("--out", default="eval/labels_blind.csv"); x.set_defaults(f=cmd_export_labels)
     x = sp.add_parser("eval"); x.add_argument("--labels", required=True); x.set_defaults(f=cmd_eval)
     x = sp.add_parser("backtest-leads"); x.add_argument("--file", default="data/leads_enriched.csv"); x.set_defaults(f=cmd_backtest)

@@ -7,3 +7,5 @@ __pycache__/
 eval/labels_blind.csv
 data/prospects_report.csv
 data/demo.db
+data/*.db-wal
+data/*.db-shm

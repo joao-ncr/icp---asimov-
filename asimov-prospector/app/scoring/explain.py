@@ -6,6 +6,20 @@ from app.intelligence.signals import taxonomy
 SERVICE_NAMES = {"site": "Sites", "aplicativo": "Aplicativos", "software": "Softwares personalizados", "dados": "Analise de dados"}
 
 
+def _history_cautions(history: dict | None, best_service: str) -> list[str]:
+    """Contexto da base historica: alerta cadastral e divergencia entre a oferta da planilha e a do motor."""
+    if not history:
+        return []
+    notes = []
+    if history.get("registration_alert"):
+        notes.append("Cadastro na base historica: " + history["registration_alert"])
+    suggested = history.get("suggested_service")
+    if suggested and suggested != best_service:
+        notes.append(f"A base historica sugeria {SERVICE_NAMES[suggested]} ({history['best_offer']}); a analise dos sinais aponta "
+                     f"{SERVICE_NAMES[best_service]}. Vale conferir as duas hipoteses.")
+    return notes
+
+
 def build_explanation(result: dict, hits: dict, service_defs: dict, similar_cases: list[tuple[str, float]]) -> dict:
     svc = result["best_service"]
     codes = result["signals_by_service"].get(svc, [])[:4]
@@ -24,6 +38,7 @@ def build_explanation(result: dict, hits: dict, service_defs: dict, similar_case
         cautions.append("Ja ha indicio de solucao existente: " + "; ".join(present).lower())
     if result["viability_notes"]:
         cautions.append("Viabilidade: " + "; ".join(result["viability_notes"]))
+    cautions += _history_cautions(result.get("history"), svc)
     if result["evidence_multiplier"] < 0.75:
         cautions.append("Evidencia limitada: tratar como pista a validar, nao como conclusao.")
     text = (f"Principal oportunidade: {SERVICE_NAMES[svc]} ({result['service_scores'][svc]:.0f}/100). "

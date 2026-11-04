@@ -1,0 +1,46 @@
+# Lista mensal de CNPJ do ICP: baixa a base aberta da Receita (~7 GB), filtra pelos ICPs de app/config/icp.yaml e
+# publica so o recorte (alguns MB) na release "cnpj-feed". O app busca esse arquivo pelo botao da tela "Nova análise".
+# Custo: ~1-2 h de runner por mes, dentro da cota gratuita do GitHub para repositorio privado.
+name: Lista de CNPJ (Receita)
+
+on:
+  schedule:
+    - cron: "0 9 20 * *"        # dia 20 de cada mes, 06h (Brasilia): a Receita publica a base do mes antes disso
+  workflow_dispatch:             # botao "Run workflow" na aba Actions
+
+permissions:
+  contents: write                # criar/atualizar a release com o CSV
+
+concurrency:
+  group: cnpj-feed
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    defaults:
+      run:
+        working-directory: asimov-prospector
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # So o necessario para o coletor (nao precisa de Streamlit/pandas/sklearn).
+      - name: Instalar dependencias
+        run: pip install "httpx>=0.27" "PyYAML>=6.0" "pydantic>=2.6"
+
+      - name: Montar recorte do ICP
+        run: python -m app.discovery.receita_feed --out "$RUNNER_TEMP/cnpj_icp.csv"
+
+      - name: Publicar na release cnpj-feed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view cnpj-feed >/dev/null 2>&1 || \
+            gh release create cnpj-feed --title "Lista de CNPJ (ICP)" --notes "Gerada automaticamente." --latest=false
+          gh release upload cnpj-feed "$RUNNER_TEMP/cnpj_icp.csv" --clobber
+          gh release edit cnpj-feed --notes-file "$RUNNER_TEMP/cnpj_icp.txt"

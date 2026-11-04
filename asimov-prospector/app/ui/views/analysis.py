@@ -6,6 +6,7 @@ import streamlit as st
 from app.core.auth import User
 from app.database.run_lock import RunInProgress
 from app.discovery import generation as discovery_generation
+from app.discovery.feed import FeedError
 from app.integrations.ploomes.client import PloomesError
 from app.integrations.ploomes.sync import SyncReport, SyncTooSoon
 from app.ui import data, theme
@@ -145,7 +146,7 @@ def _discovery_source(service: str, user: User) -> None:
     overview = data.discovery_overview()
     _last_generation(overview["last"])
     if user.is_admin:
-        _generation_uploader(user)
+        _generation_actions(user)
     else:
         st.caption("A geração de novos leads é feita por um administrador.")
     _pending_review(overview["pending"], service, user)
@@ -160,23 +161,41 @@ def _last_generation(last: dict | None) -> None:
         st.caption(f"Última geração: {_when(last['finished_at'])} (UTC), por {last['triggered_by']}.")
 
 
+def _generation_actions(user: User) -> None:
+    if not data.discovery_feed_configured():
+        _generation_uploader(user)
+        return
+    st.caption("A lista de empresas é atualizada todo mês a partir da base da Receita, já filtrada pelos ICPs.")
+    if st.button("🧭 Buscar lista atualizada e gerar candidatos", type="primary"):
+        _generate(user, "Baixando a lista do mês e filtrando pelos ICPs…", lambda: data.run_discovery_from_feed(user.username))
+    with st.expander("Enviar um CSV manualmente (contingência)"):
+        _generation_uploader(user)
+
+
 def _generation_uploader(user: User) -> None:
     uploaded = st.file_uploader(
         "Enviar extrato de CNPJ (CSV da Receita, colunas: cnpj,razao_social,nome_fantasia,cnae,uf,municipio,porte,situacao)",
         type=["csv"], key="discovery_csv", help="Filtrado pelos CNAE/UF/município de cada ICP em config/icp.yaml.")
-    if not uploaded or not st.button("🧭 Gerar candidatos a partir do CSV"):
-        return
+    if uploaded and st.button("🧭 Gerar candidatos a partir do CSV"):
+        _generate(user, "Filtrando o CSV pelos ICPs configurados…",
+                  lambda: data.run_discovery_generation(uploaded, uploaded.name, user.username))
+
+
+def _generate(user: User, waiting_message: str, generate) -> None:
     try:
-        with st.spinner("Filtrando o CSV pelos ICPs configurados…"):
-            report = data.run_discovery_generation(uploaded, uploaded.name, user.username)
+        with st.spinner(waiting_message):
+            report = generate()
     except RunInProgress as exc:
         explain_busy(exc, user)
         return
     except discovery_generation.GenerationTooSoon as exc:
         st.info(str(exc))
         return
+    except FeedError as exc:
+        st.error(str(exc))
+        return
     except Exception as exc:
-        st.error(f"Não foi possível gerar candidatos a partir do CSV: {exc}")
+        st.error(f"Não foi possível gerar candidatos: {exc}")
         return
     st.session_state[DISCOVERY_MESSAGE_KEY] = (
         f"{report.matched} linha(s) casaram com algum ICP; {report.new_candidates} candidato(s) novo(s) para aprovar "

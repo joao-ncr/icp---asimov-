@@ -28,8 +28,9 @@ automaticamente (pode levar alguns minutos); depois disso, a interface abre dire
 
 ### Telas
 
-- **Nova análise** — sincronize o Ploomes (administrador), gere e aprove leads novos a partir de um CSV de CNPJ
-  aberto, ou use uma lista própria/teste uma empresa; escolha quantas analisar agora.
+- **Nova análise** — sincronize o Ploomes (administrador), gere e aprove leads novos a partir da lista mensal de
+  CNPJ da Receita (um botão; upload de CSV fica como contingência), ou use uma lista própria/teste uma empresa;
+  escolha quantas analisar agora.
 - **Ranking** — lista ordenada por pontuação, com exportação para Excel/CSV.
 - **Avaliar** — evidências de cada empresa (fato/inferência/hipótese) e a sua avaliação em 3 níveis.
 
@@ -95,6 +96,24 @@ python run.py setup
 python -m pytest -q
 python run.py ui
 ```
+
+### Leads novos a partir da base da Receita (automático)
+
+Todo dia 20, o workflow `.github/workflows/cnpj-feed.yml` baixa a base aberta de CNPJ da Receita (~7 GB), filtra
+pelos ICPs de `app/config/icp.yaml` e publica só o recorte (alguns MB) na release `cnpj-feed` do repositório. Nada
+disso roda na máquina do app, e não há custo dentro da cota gratuita do GitHub Actions. Na tela **Nova análise**, o
+administrador clica em **Buscar lista atualizada e gerar candidatos**; os candidatos continuam exigindo aprovação.
+
+Configuração (uma vez):
+
+1. Faça push do workflow e rode-o manualmente uma vez: aba **Actions** → **Lista de CNPJ (Receita)** → **Run
+   workflow** (leva de 1 a 2 h; a Receita é lenta).
+2. Crie um token *fine-grained* no GitHub (Settings → Developer settings → Fine-grained tokens), restrito a este
+   repositório, com permissão **Contents: Read-only**, e coloque em `CNPJ_FEED_TOKEN` no `.env`.
+
+Para testar o coletor localmente: `python -m app.discovery.receita_feed --out data/cnpj_icp.csv`. Se a Receita
+mudar o link de publicação, ajuste `receita.share_url` em `app/config/icp.yaml`. Decisão registrada em
+`docs/DECISAO_FONTE_CNPJ.md`.
 
 ### Comandos alternativos de linha de comando
 

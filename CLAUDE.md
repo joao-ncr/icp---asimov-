@@ -20,7 +20,7 @@ Monólito modular em `asimov-prospector/app/`, separando o motor de inteligênci
 | `core/` | settings, profile, utilitários, `auth.py` (login/hash/throttle) |
 | `crawler/` | fetch, extração, proteção SSRF, limites e cache |
 | `extraction/` | limpeza/extração de texto |
-| `discovery/` | fontes, queries, dedup, leads, `historical.py` (base histórica → `lead_history`), `generation.py`/`review.py` (leads novos via CNPJ aberto, com aprovação humana) |
+| `discovery/` | fontes, queries, dedup, leads, `historical.py` (base histórica → `lead_history`), `generation.py`/`review.py` (leads novos via CNPJ aberto, com aprovação humana), `receita_feed.py` (coletor mensal da base da Receita, roda no GitHub Actions) e `feed.py` (app baixa o recorte publicado) |
 | `integrations/ploomes/` | cliente somente leitura do CRM Ploomes, mapeamento e sincronização incremental |
 | `intelligence/` | sinais, LLM, embeddings |
 | `scoring/` | score determinístico, anti-ICP, explicabilidade |
@@ -66,7 +66,7 @@ Monólito modular em `asimov-prospector/app/`, separando o motor de inteligênci
 
 ## Testes e validação
 
-- Suíte atual deve permanecer verde (`171 passed`): `python -m pytest -q` (dentro de `asimov-prospector/`, com a `.venv` ativa).
+- Suíte atual deve permanecer verde (`188 passed`): `python -m pytest -q` (dentro de `asimov-prospector/`, com a `.venv` ativa).
 - Todo comportamento novo de scoring, crawler (especialmente SSRF) ou extração vem com teste.
 - Métricas da demo **não** representam performance comercial; validação real exige 50–100 avaliações humanas.
 - Rodar a UI: `python run.py ui`. Setup: `python run.py setup`.

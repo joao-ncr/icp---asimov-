@@ -1,6 +1,7 @@
 """Geracao de leads novos a partir de dados abertos de CNPJ (Receita), filtrados por ICP (config/icp.yaml).
 
-O CSV e enviado pelo admin na tela (sem rede externa). Os candidatos NUNCA viram organizacao sozinhos: ficam
+O CSV vem da lista mensal publicada pelo GitHub Actions (app/discovery/feed.py) ou, em contingencia, de upload do
+admin; aqui nao ha rede. Os candidatos NUNCA viram organizacao sozinhos: ficam
 pendentes em discovery_candidate ate um humano aprovar (ver app/discovery/review.py). Sem cron real: o Streamlit
 Community Cloud nao tem processo de fundo, entao "agendamento" e so uma trava de intervalo minimo entre geracoes -
 mesmo espirito da sincronizacao do Ploomes (app/integrations/ploomes/sync.py), sem acoplar os dois modulos."""
@@ -115,10 +116,14 @@ def _generate(conn: sqlite3.Connection, csv_file, cfg: dict, generation_id: int)
     seen_cnpjs = _known_cnpjs(conn)
     report = GenerationReport(rows_total=len(rows))
     for icp in cfg["icps"]:
-        matched = candidates_from_cnpj_rows(rows, icp["cnae_prefixes"], icp.get("uf"), icp.get("municipios"), limit)
+        # O limite vale para candidatos NOVOS: a lista mensal e a mesma entre geracoes, entao cortar antes da dedup
+        # faria toda geracao seguinte casar as mesmas primeiras linhas e nao trazer ninguem novo.
+        matched = candidates_from_cnpj_rows(rows, icp["cnae_prefixes"], icp.get("uf"), icp.get("municipios"), limit=None)
         report.matched += len(matched)
         rationale = _rationale(icp)
         for candidate in matched:
+            if report.new_candidates >= limit:
+                break
             if not candidate.cnpj:
                 report.skipped_without_cnpj += 1
                 continue

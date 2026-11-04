@@ -80,6 +80,16 @@ def test_row_without_cnpj_is_skipped_not_inserted(conn):
     assert (report.skipped_without_cnpj, report.new_candidates) == (1, 0)
 
 
+def test_run_limit_counts_new_candidates_so_next_generation_brings_the_rest(conn, monkeypatch):
+    cfg = {**gen.rules(), "max_candidates_per_run": 1}
+    monkeypatch.setattr(gen, "rules", lambda: cfg)
+    second = "55.666.777/0001-88,Industria Beta LTDA,Industria Beta,2812-1,MG,Itajuba,PEQUENA,ATIVA"
+    assert _run(conn, ROW_MATCH, second).new_candidates == 1
+    _allow_next_generation(conn)
+    assert _run(conn, ROW_MATCH, second, filename="extrato2.csv").new_candidates == 1
+    assert {r["cnpj"] for r in review.pending_candidates(conn)} == {"11222333000144", "55666777000188"}
+
+
 def test_generation_writes_audit_trail(conn):
     _run(conn, ROW_MATCH)
     row = conn.execute("SELECT status, triggered_by, filename FROM discovery_generation").fetchone()

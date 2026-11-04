@@ -1,6 +1,7 @@
 """Tela 'Avaliar': evidências de uma empresa e a avaliação do time em 3 níveis (a base do aprendizado)."""
 from __future__ import annotations
 import streamlit as st
+from app.core.auth import LOCAL_USER, User
 from app.feedback.store import LEVEL_LABELS
 from app.ui import data, theme
 from app.ui.views.common import LEVEL_ICONS, level_text, service_name
@@ -16,7 +17,7 @@ def _next_pending(rows: list[dict], current_org_id: int) -> int | None:
     return None
 
 
-def render(service: str) -> None:
+def render(service: str, user: User) -> None:
     theme.hero("Avaliar oportunidade", "Veja por que a empresa apareceu e diga se ela é uma boa oportunidade. Sua avaliação calibra o ranking.")
     rows = data.ranking_rows(None if service == "Geral" else service)
     if not rows:
@@ -30,7 +31,7 @@ def render(service: str) -> None:
 
     _summary(pick)
     _evidence(pick)
-    _evaluation_form(pick, rows)
+    _evaluation_form(pick, rows, user)
 
 
 def _summary(pick: dict) -> None:
@@ -54,13 +55,21 @@ def _summary(pick: dict) -> None:
             st.warning("Itens para confirmar: " + " | ".join(ex["absences"]))
         for caution in ex.get("cautions", []):
             st.info(caution)
-    history = data.history_for(pick["org_id"])
-    if history:
-        h1, h2 = st.columns(2)
-        h1.metric("Oferta sugerida na base histórica", history["best_offer"] or "—")
-        h2.metric("Score legado (referência)", f"{history['legacy_score']:.0f}" if history["legacy_score"] is not None else "—")
-        if history["registration_alert"]:
-            st.warning(history["registration_alert"])
+    _history(data.history_for(pick["org_id"]))
+
+
+def _history(history: dict | None) -> None:
+    """Contexto comercial (Ploomes ou base histórica): só aparece o que existe."""
+    if not history:
+        return
+    items = [("Oferta sugerida no CRM", history["best_offer"]), ("Situação no CRM", history["commercial_status"]),
+             ("Score legado (referência)", f"{history['legacy_score']:.0f}" if history["legacy_score"] is not None else None)]
+    present = [(label, value) for label, value in items if value]
+    if present:
+        for column, (label, value) in zip(st.columns(len(present)), present):
+            column.metric(label, value)
+    if history["registration_alert"]:
+        st.warning(history["registration_alert"])
 
 
 def _evidence(pick: dict) -> None:
@@ -69,10 +78,10 @@ def _evidence(pick: dict) -> None:
     if evidence.empty:
         st.info("Nenhuma evidência verificável suficiente foi registrada.")
     else:
-        st.dataframe(evidence, hide_index=True, use_container_width=True)
+        st.dataframe(evidence, hide_index=True, width="stretch")
 
 
-def _evaluation_form(pick: dict, rows: list[dict]) -> None:
+def _evaluation_form(pick: dict, rows: list[dict], user: User) -> None:
     st.divider()
     st.subheader("👤 Sua avaliação")
     previous = data.evaluation_for(pick["org_id"])
@@ -82,7 +91,7 @@ def _evaluation_form(pick: dict, rows: list[dict]) -> None:
         level = st.radio("Esta empresa é uma boa oportunidade para a Asimov?", list(LEVEL_LABELS), horizontal=True, index=None,
                          format_func=lambda k: f"{LEVEL_ICONS[k]} {LEVEL_LABELS[k]}")
         reason = st.text_input("Comentário (opcional)", placeholder="Por que boa, neutra ou ruim?")
-        author = st.text_input("Seu nome (opcional)", value=st.session_state.get("author", ""))
+        author = _author_field(user)
         submitted = st.form_submit_button("Salvar e ir para a próxima", type="primary")
     if not submitted:
         return
@@ -96,3 +105,11 @@ def _evaluation_form(pick: dict, rows: list[dict]) -> None:
         st.session_state["selected_org_id"] = following
     st.toast("Avaliação registrada. Obrigado!")
     st.rerun()
+
+
+def _author_field(user: User) -> str:
+    """Com login, o autor é o usuário autenticado (auditável); no modo local, o nome é opcional."""
+    if user is not LOCAL_USER:
+        st.caption(f"Avaliando como **{user.username}**.")
+        return user.username
+    return st.text_input("Seu nome (opcional)", value=st.session_state.get("author", ""))

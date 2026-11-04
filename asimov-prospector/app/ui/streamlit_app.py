@@ -1,7 +1,8 @@
 """Frontend operacional do Asimov Prospector (ponto de entrada do Streamlit).
 
-Fluxo: importar empresas -> analisar -> ranking -> o time comercial avalia em 3 níveis -> o sistema aprende.
-Cada tela vive em app/ui/views; acesso a dados em app/ui/data.py; o motor de inteligência fica fora desta camada."""
+Fluxo: sincronizar empresas do Ploomes -> analisar -> ranking -> o time comercial avalia em 3 níveis -> o sistema aprende.
+Cada tela vive em app/ui/views; acesso a dados em app/ui/data.py; o motor de inteligência fica fora desta camada.
+Nenhum dado é lido antes do login (app/ui/auth.py)."""
 from __future__ import annotations
 
 import sys
@@ -13,7 +14,7 @@ import streamlit as st
 
 from app.database.db import ensure_ready
 from app.scoring.explain import SERVICE_NAMES
-from app.ui import data, theme
+from app.ui import auth, data, theme
 from app.ui.views import analysis, ranking, review
 from app.ui.views.common import learning_panel
 
@@ -21,6 +22,8 @@ PAGES = {"Nova análise": analysis.render, "Ranking": ranking.render, "Avaliar":
 
 st.set_page_config(page_title="Asimov Jr. · Prospector", page_icon=theme.page_icon(), layout="wide", initial_sidebar_state="expanded")
 theme.apply()
+auth.load_secrets_into_env()
+user = auth.require_user()
 ensure_ready()
 
 if "page" not in st.session_state:
@@ -34,5 +37,7 @@ with st.sidebar:
     st.divider()
     learning_panel(compact=True)
     st.caption("O Prospector pesquisa informações públicas e sugere oportunidades. A decisão comercial continua humana.")
+    st.divider()
+    auth.logout_button(user)
 
-PAGES[page](service)
+PAGES[page](service, user)

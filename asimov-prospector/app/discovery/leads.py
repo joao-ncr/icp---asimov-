@@ -80,14 +80,3 @@ def import_leads(conn, xlsx: Path) -> int:
                       r["loss_category"], r["segment"], r["is_person"], r["created_month"]))
     conn.commit()
     return len(rows)
-
-
-def write_seed_csv(rows: list[dict], path: Path) -> None:
-    import csv
-    path.parent.mkdir(parents=True, exist_ok=True)
-    cols = ["name", "outcome", "value", "funnel", "loss_reason", "loss_category", "segment", "is_person", "created_month"]
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=cols)
-        w.writeheader()
-        for r in rows:
-            w.writerow({k: r[k] for k in cols})

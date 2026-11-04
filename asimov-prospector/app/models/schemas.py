@@ -60,6 +60,36 @@ class HistoricalLead(BaseModel):
     loss_reason: Optional[str] = None
 
 
+DealOutcome = Literal["open", "won", "lost"]
+
+
+class PloomesCompany(BaseModel):
+    """Empresa (Contato tipo empresa) lida do Ploomes. Sem dados de pessoas (LGPD)."""
+    contact_id: int
+    candidate: Candidate
+    segment_label: Optional[str] = None
+    registration_alert: Optional[str] = None
+    cnpj_suspect: bool = False
+    last_update: Optional[str] = None
+
+
+class PloomesDeal(BaseModel):
+    """Negocio de um funil considerado, ja ligado a empresa (contato tipo empresa)."""
+    deal_id: int
+    company_contact_id: int
+    outcome: DealOutcome
+    funnel: str
+    stage: Optional[str] = None
+    amount: float = 0.0
+    loss_reason: Optional[str] = None
+    loss_category: Optional[str] = None
+    best_offer: Optional[str] = None
+    priority: Optional[str] = None
+    segment_label: Optional[str] = None
+    created_month: Optional[str] = None
+    last_update: Optional[str] = None
+
+
 class PageData(BaseModel):
     url: str
     status_code: int = 200

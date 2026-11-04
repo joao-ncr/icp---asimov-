@@ -1,4 +1,5 @@
 # Todos os numeros sao HIPOTESES a calibrar com o dataset rotulado (eval/).
+criteria_version: 2           # 1 = criterios anteriores (site/app/software/dados); 2 = + automacao/engenharia de dados + colaboracao entre areas. Gravado em cada analise.
 weights:                # soma = 1.0
   best_service_fit: 0.50
   secondary_fit: 0.15
@@ -12,6 +13,14 @@ evidence:
   min_distinct_signals_ranked: 1   # abaixo disso: status "inconclusive"
   weak_fit_cap: 0.35          # fit maximo se so houver 1 sinal fraco
   weak_signal_threshold: 0.6
+  contextual_fit_cap: 0.4     # fit maximo de um servico sustentado SO por sinais 'contextual' (atividade descrita, sem dor declarada)
+collaboration:                # dimensao propria (nao e servico): oportunidade que exige varias especialidades
+  max_bonus: 0.05             # acrescimo maximo ao score-base (0..1); sem colaboracao o score e identico ao dos criterios anteriores
+  discipline_fit_min: 0.4     # fit minimo para uma disciplina (software/aplicativo/dados/automacao) contar como necessaria
+  discipline_primary_weight: 0.5   # a disciplina so conta se algum sinal a sustenta com peso >= isto (evita 1 sinal 'inflar' varias disciplinas)
+  min_distinct_signals: 2     # sinais distintos para a amplitude contar como multidisciplinar
+  breadth_score: {2: 0.35, 3: 0.5, 4: 0.65}   # n de disciplinas -> forca por amplitude
+  flag_threshold: 0.5         # a partir daqui a analise e marcada como multidisciplinar
 region:
   terms: [itajuba, "sul de minas", "pouso alegre", varginha, "pocos de caldas", "santa rita do sapucai", lavras, "sao lourenco", "cachoeira de minas"]
   bonus: 0.15
@@ -45,6 +54,8 @@ segments:                     # keywords -> segmento (usado so para B1 e viabili
   logistica: [logistica, transportadora, distribuidora, frota]
   comercio: [loja, varejo, atacado, mercado]
   lazer_clube: [clube, turismo, hotel]
+  agronegocio: [agronegocio, agropecuaria, agricola, fazenda, cooperativa agricola, cafeicultura]     # ICP_B/ICP_C ja citam agronegocio/saneamento/energia
+  energia_saneamento: [saneamento, hidreletrica, geracao de energia, distribuicao de energia, tratamento de agua]
 segment_labels:              # rotulos curtos de planilhas (ex.: 'Oficina mecanica') -> segmento; so vale para rotulos, nunca para texto de site
   industria: [marcenaria, marceneiro, moveleiro, serralheria, tornearia, soldador, usina mec, usina de aco, maquinario, metais, compressor, motores, moveis planejados]
   servicos_tecnicos: [energia, engenheiro, oficina, assistencia tecnica, eletricista, construtora, construcao civil, topografia, terraplenagem, reboque, reparos, conserto, mecanico, automacao, empilhadeira, guindaste, fotovoltaica, consultor ambiental, seguranca ocupacional]
@@ -64,6 +75,8 @@ sector_prior:                 # HIPOTESE inicial para o baseline B1 (setor/porte
   comercio: 0.5
   lazer_clube: 0.4
   empresa_junior: 0.15
+  agronegocio: 0.6
+  energia_saneamento: 0.6
   default: 0.4
 calibration:                  # HIPOTESES: aprendizado so ativa com avaliacoes suficientes; ajustes encolhidos e limitados (anti-overfitting)
   min_labels: 30              # avaliacoes (1 por empresa, a mais recente) para ativar o ajuste

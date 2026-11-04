@@ -3,19 +3,20 @@ Linguagem sempre condicional; ausencia nunca e apresentada como fato."""
 from __future__ import annotations
 from app.intelligence.signals import taxonomy
 
-SERVICE_NAMES = {"site": "Sites", "aplicativo": "Aplicativos", "software": "Softwares personalizados", "dados": "Analise de dados"}
+SERVICE_NAMES = {"site": "Sites", "aplicativo": "Aplicativos", "software": "Softwares personalizados", "dados": "Analise de dados",
+                 "automacao": "Engenharia e automacao inteligente", "colaboracao": "Colaboracao entre areas"}
 
 
 def _history_cautions(history: dict | None, best_service: str) -> list[str]:
-    """Contexto da base historica: alerta cadastral e divergencia entre a oferta da planilha e a do motor."""
+    """Contexto comercial (Ploomes ou base historica): alerta cadastral e divergencia entre a oferta do CRM e a do motor."""
     if not history:
         return []
     notes = []
     if history.get("registration_alert"):
-        notes.append("Cadastro na base historica: " + history["registration_alert"])
+        notes.append("Cadastro no CRM: " + history["registration_alert"])
     suggested = history.get("suggested_service")
     if suggested and suggested != best_service:
-        notes.append(f"A base historica sugeria {SERVICE_NAMES[suggested]} ({history['best_offer']}); a analise dos sinais aponta "
+        notes.append(f"O historico comercial sugeria {SERVICE_NAMES[suggested]} ({history['best_offer']}); a analise dos sinais aponta "
                      f"{SERVICE_NAMES[best_service]}. Vale conferir as duas hipoteses.")
     return notes
 
@@ -39,6 +40,12 @@ def build_explanation(result: dict, hits: dict, service_defs: dict, similar_case
     if result["viability_notes"]:
         cautions.append("Viabilidade: " + "; ".join(result["viability_notes"]))
     cautions += _history_cautions(result.get("history"), svc)
+    if result.get("multidisciplinary"):
+        areas = ", ".join(SERVICE_NAMES[d] for d in result["collaboration_disciplines"]) or "mais de uma especialidade"
+        cautions.append(f"Oportunidade multidisciplinar ({result['collaboration'] * 100:.0f}/100): a necessidade parece atravessar {areas}; "
+                        "considerar uma proposta conjunta em vez de um unico servico.")
+    if codes and all(taxonomy()[c].get("concreteness") == "contextual" for c in result["signals_by_service"][svc]):
+        cautions.append("Compatibilidade superficial: so ha indicio da atividade, sem dor declarada. Validar a necessidade antes de abordar.")
     if result["evidence_multiplier"] < 0.75:
         cautions.append("Evidencia limitada: tratar como pista a validar, nao como conclusao.")
     text = (f"Principal oportunidade: {SERVICE_NAMES[svc]} ({result['service_scores'][svc]:.0f}/100). "

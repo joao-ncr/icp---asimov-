@@ -1,111 +1,142 @@
-# 🎯 Asimov Prospector — Inteligência de Prospectamento B2B
+# Asimov Prospector
 
-O **Asimov Prospector** é um sistema de inteligência de vendas desenvolvido para a **Asimov Jr.** (Empresa Júnior de Tecnologia da UNIFEI). O objetivo principal é automatizar a identificação e a qualificação de potenciais clientes B2B.
+Ferramenta interna de **inteligência de prospecção B2B** para a Asimov Jr.
 
-Em vez de categorizar empresas apenas pelo setor de atuação (CNAE/Indústria), o sistema utiliza **Inteligência de Sinais Operacionais**. Ele analisa a presença digital, sites institucionais e páginas públicas de organizações para encontrar evidências reais de gargalos operacionais ou tecnológicos — correlacionando essas necessidades com o portfólio de soluções da Asimov Jr.
+O sistema traz empresas do CRM (Ploomes) e de geração de leads novos a partir de dados abertos de CNPJ, analisa
+informações públicas de cada uma, identifica sinais de possíveis problemas operacionais/digitais/dados, relaciona
+esses sinais aos serviços da Asimov e entrega um ranking para revisão humana. Uma lista própria (planilha) e o
+teste de uma única empresa continuam disponíveis como contingência.
 
----
+## Fluxo
 
-## 📌 Visão Geral da Solução
+```
+Ploomes (CRM, somente leitura) ──┐
+Geração de leads novos (CNPJ aberto → aprovação humana) ──┼──► Analisar ──► Ranking ──► Avaliar (boa/neutra/ruim) ──► Exportar
+Lista própria / empresa única (contingência) ─────────────┘
+```
 
-Atualmente, o sistema opera localmente via interface interativa em **Streamlit**. O fluxo processa listas e planilhas de empresas, analisa os sites públicos e devolve um **ranking de viabilidade de contato** acompanhado de justificativas comerciais para a equipe de vendas.
+A avaliação do time comercial retroalimenta o scoring (`scoring/calibration.py`): com amostra suficiente, o
+sistema passa a ajustar, de forma limitada e auditável, o peso dos sinais e segmentos que o time aprovou ou
+rejeitou.
 
-┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│ Entrada de Leads│ ──► │ Coleta & Análise │ ──► │  Identificação   │ ──► │ Ranking & Score  │
-│   (Planilha/URL)│     │  da Web (Sites)  │     │    de Sinais     │     │   (Streamlit)    │
-└─────────────────┘     └──────────────────┘     └──────────────────┘     └──────────────────┘
+## Para o usuário final
 
+### Abrir o sistema (Windows)
 
----
+Dê dois cliques em `INICIAR_ASIMOV.bat`, na raiz do projeto. Na primeira execução, o ambiente é preparado
+automaticamente (pode levar alguns minutos); depois disso, a interface abre direto no navegador.
 
-## 🧠 Lógica do Motor de Inteligência (Problem-to-Solution)
+### Telas
 
-O algoritmo cruza as informações capturadas no site do prospect com as competências da Asimov Jr., gerando pontuações específicas por categoria de serviço:
+- **Nova análise** — sincronize o Ploomes (administrador), gere e aprove leads novos a partir de um CSV de CNPJ
+  aberto, ou use uma lista própria/teste uma empresa; escolha quantas analisar agora.
+- **Ranking** — lista ordenada por pontuação, com exportação para Excel/CSV.
+- **Avaliar** — evidências de cada empresa (fato/inferência/hipótese) e a sua avaliação em 3 níveis.
 
-1. **Software Personalizado:** Identifica sinais de operação complexa, uso intensivo de planilhas, processos manuais, gestão descentralizada de unidades e múltiplos sistemas desconectados.
-2. **Aplicativos Mobile:** Identifica sinais de equipes em campo, rotas de entrega, inspeções presenciais, relatórios de visita e necessidade de coleta de dados offline.
-3. **Ciência & Análise de Dados:** Identifica sinais de alto volume transacional, múltiplos indicadores operacionais, relatórios manuais recorrentes e necessidade de acompanhamento em tempo real via Dashboards.
-4. **Sites e Portais Web:** Identifica presença digital desatualizada, ausência de área do cliente/portal ou baixa capacidade de conversão de leads.
+### Como interpretar o resultado
 
-### Regra de Separação Rígida
-Para evitar falsas promessas ou "alucinações", a ferramenta separa estritamente:
-* **Fato Observado:** Dado literal encontrado no site (ex.: *"A empresa possui 15 unidades e equipes de inspeção"*).
-* **Inferência:** Interpretação lógica do fato (ex.: *"A coleta de dados das inspeções pode ser descentralizada"*).
-* **Hipótese Comercial:** A oportunidade sugerida para a Asimov (ex.: *"Oportunidade para aplicativo móvel de vistoria com sincronização offline"*).
+A **pontuação** é uma nota de compatibilidade com uma oportunidade para a Asimov — **não é probabilidade de
+fechamento**. O ranking mostra só o que é verificável (pontuação, oportunidade, hipótese e evidências); não há
+rótulos de "confiança" até haver avaliações suficientes para sustentá-los estatisticamente.
 
----
+Para cada empresa, o time responde **👍 Boa oportunidade**, **😐 Neutra** ou **👎 Ruim**. Essas respostas alimentam
+o aprendizado do sistema; com amostra mínima (ver `app/config/scoring.yaml`), a tela **Ranking** oferece "Aplicar
+aprendizado ao ranking" (reprocessa sem acessar os sites de novo).
 
-## 🛠️ Tecnologias Utilizadas
+A hipótese comercial é uma hipótese, não uma afirmação sobre a empresa — confirme antes de qualquer contato.
 
-* **Interface Visual:** Streamlit
-* **Linguagem & Execução:** Python 3.10+
-* **Banco de Dados Local:** SQLite (para guardar análises, histórico e feedbacks)
-* **Web Scraping & Extraction:** BeautifulSoup, Playwright, HTTPX
-* **Inteligência Artificial:** Modelos de Embeddings (`sentence-transformers`) e integração com LLMs locais (Ollama / Qwen / Llama 3)
-* **Testes Automatizados:** Pytest
+### O que o sistema não faz
 
----
-⚡ Manual de Instalação e Execução
-Pré-requisitos
-Python 3.10 ou superior instalado na máquina.
+Não envia e-mail nem WhatsApp, não aborda empresas automaticamente, não usa dados pessoais e não declara que uma
+empresa é cliente. Não substitui a decisão comercial: toda ação de contato continua humana. Negócios dos funis do
+Ploomes que não fazem parte do mapeamento configurado são ignorados (apenas contados no relatório de sincronização).
 
-Git instalado.
+### Primeiro piloto
 
-1. Clonar o Repositório
-Bash
-git clone [https://github.com/seu-usuario/asimov-prospector.git](https://github.com/seu-usuario/asimov-prospector.git)
-cd asimov-prospector
-2. Configurar o Ambiente Virtual
-No Windows:
+Para o primeiro piloto, analise 20–50 empresas por vez, não centenas. A métrica mais importante não é quantidade
+de empresas encontradas, e sim **quantas das 10 primeiras realmente parecem boas oportunidades**.
 
-Bash
-python -m venv venv
-.\venv\Scripts\activate
-No Linux/Mac:
+### Planilha (contingência)
 
-Bash
-python3 -m venv venv
-source venv/bin/activate
-3. Instalar Dependências
-Bash
+Colunas obrigatórias: `empresa`, `site`. Opcionais: `municipio`, `uf`, `segmento`. A interface aceita `.xlsx` e
+`.csv` e oferece um modelo para download.
+
+### Se algo der errado
+
+Um erro de SSL, timeout, DNS ou transporte numa empresa é tratado como falha daquela empresa e **não interrompe o
+lote**; a análise segue para as demais e o erro fica registrado para auditoria. Feche a interface e abra
+`INICIAR_ASIMOV.bat` novamente se precisar reiniciar.
+
+## Acesso
+
+- `AUTH_MODE=password` (padrão, usado no deploy): login obrigatório; usuários em `APP_USERS`, administradores em
+  `APP_ADMINS`. Crie um usuário com `python run.py hash-password <usuario>`. Administradores sincronizam o
+  Ploomes e geram leads novos; qualquer usuário logado analisa lotes e avalia.
+- `AUTH_MODE=local`: sem login, só aceita conexões da própria máquina — use apenas para uso individual.
+
+## Para equipe técnica
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\bootstrap.ps1
+python run.py setup
+python -m pytest -q
+python run.py ui
+```
+
+Ou manualmente:
+
+```bash
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
-(Opcional - caso utilize recursos dinâmicos do Playwright para scraping):
+python run.py setup
+python -m pytest -q
+python run.py ui
+```
 
-Bash
-playwright install chromium
-4. Executar a Aplicação
-Opção Rápida no Windows:
-Basta dar um duplo clique no arquivo scripts/Iniciar_Asimov_Prospector.bat localizado na raiz do projeto.
+### Comandos alternativos de linha de comando
 
-Via Terminal (Windows, Linux ou Mac):
+Fora da interface, `run.py` também cobre: `run --seeds data/seeds.csv [--cnpj-csv ... --cnae ... --uf ... --municipio ...]`
+(rodada via CLI), `report --out data/prospects_report.csv` (exporta evidências e hipótese, sem dados de contato),
+`analyze-url <url>` (valida uma hipótese isolada), `demo` (pipeline completo com fixtures offline, sem rede),
+`export-labels`/`eval` (amostragem cega e avaliação P@10/NDCG contra rótulos humanos), `backtest-leads`,
+`sync-ploomes --by <quem>` (mesma sincronização da tela, via terminal) e `purge --days N` (remove páginas/cache
+antigos conforme a política de retenção).
 
-Bash
-python run.py
-A interface interativa do Streamlit abrirá automaticamente no seu navegador pelo endereço http://localhost:8501.
+## Arquitetura
 
-🧪 Execução de Testes Automatizados
-Para validar o funcionamento dos módulos de scoring, extrator de sinais, proteção contra injeção de prompt e conexões:
+Monólito modular: o motor de inteligência fica separado da camada de operação, para permitir construir Comercial
+e Administração depois sem reescrever crawler, scoring ou banco. Resumo de decisões em `docs/ARQUITETURA.md`;
+critérios do ranking em `docs/CRITERIOS_V2.md`; o que a base histórica de leads ensinou em `docs/LEADS_INSIGHTS.md`.
 
-Bash
-pytest
-Para rodar os testes de avaliação com o conjunto de teste de acurácia:
+O núcleo preservado inclui:
 
-Bash
-python -m eval.run_eval
-🛡️ Segurança e Proteção de Dados (LGPD)
-Privacidade e LGPD: O sistema analisa exclusivamente dados públicos de Pessoas Jurídicas (empresas). Informações pessoais de pessoas físicas são descartadas durante o processo de extração.
+- scoring determinístico, separado da IA;
+- evidência verificável (fato/inferência/hipótese nunca se misturam);
+- anti-ICP e sinais por serviço;
+- integração com o Ploomes somente leitura (nunca escreve no CRM);
+- geração de leads novos com aprovação humana obrigatória antes de qualquer análise;
+- histórico de leads preservado;
+- proteção contra SSRF e prompt injection;
+- limites de crawler e cache;
+- SQLite, com migrações aditivas;
+- login obrigatório no deploy;
+- testes automatizados;
+- feedback humano.
 
-Proteção contra Prompt Injection Indireto: Conteúdos baixados de sites terceiros são tratados como dados não confiáveis. Instruções maliciosas contidas em sites analisados são isoladas e ignoradas pelo motor de IA.
+## Segurança e LGPD
 
-SSRF (Server-Side Request Forgery): O crawler bloqueia requisições a IPs internos ou redes locais (127.0.0.1, 10.x.x.x, etc.).
+Ver `docs/SEGURANCA_LGPD.md` para o detalhamento de controles (SSRF, prompt injection, segredos, acesso) e das
+decisões de minimização de dados pessoais.
 
-🔁 Evolução Futura do Projeto
-Os dados de interações, diagnósticos de sites e avaliações manuais inseridas pelo time comercial através do painel Streamlit (Human-in-the-Loop) serão mantidos no banco local.
+## Validação
 
-Essa base servirá para:
+A suíte atual deve permanecer verde: `python -m pytest -q`. O desempenho comercial ainda precisa ser validado com
+50–100 avaliações humanas; as métricas da demo (`python run.py demo`) não representam performance comercial.
 
-Dataset de Treinamento: Formar uma base anotada de alta qualidade para ajuste fino (fine-tuning) e otimização dos prompts dos modelos locais.
+## Próxima etapa
 
-Prospecção Ativa Autônoma: Evoluir do formato de carregamento por planilha/lista para um módulo que descobre novos domínios web de forma totalmente automática a partir das necessidades identificadas no mercado.
-
-Ajuste Fino de Pesos (Scoring): Rebalancear automaticamente a relevância dos sinais conforme a taxa de conversão real obtida nas abordagens comerciais da Asimov Jr.
+Depois de a Operação ser usada por pessoas reais, o próximo módulo é **Comercial**. O módulo de Administração vem
+depois, para permitir manutenção de ICP, sinais, cases e permissões sem editar código.

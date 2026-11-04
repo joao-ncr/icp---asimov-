@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Iterator
 from app.core.settings import get_settings
+from app.database.migrations import apply_migrations
 
 SCHEMA = Path(__file__).with_name("schema.sql")
 BUSY_TIMEOUT_S = 30     # espera por lock de outro escritor (ex.: outra aba/processo do Streamlit) antes de falhar
@@ -44,7 +45,7 @@ def session(path: str | Path | None = None) -> Iterator[sqlite3.Connection]:
 
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA.read_text(encoding="utf-8"))
-    conn.commit()
+    apply_migrations(conn)
 
 
 @lru_cache(maxsize=None)

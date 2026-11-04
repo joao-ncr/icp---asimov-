@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import pandas as pd
 import streamlit as st
+from app.core.auth import User
 from app.database.run_lock import RunInProgress
 from app.ui import data, theme
 from app.ui.views.common import RunProgress, explain_busy, learning_panel, level_text, service_name
@@ -28,11 +29,11 @@ def _open_review(org_id: int) -> None:
     st.session_state["page"] = "Avaliar"
 
 
-def render(service: str) -> None:
+def render(service: str, user: User) -> None:
     theme.hero("Ranking", "Comece pelo topo, abra cada empresa e diga se ela é uma boa oportunidade. É assim que o sistema aprende.")
     info = learning_panel()
     if info["needs_reapply"]:
-        _reapply_banner()
+        _reapply_banner(user)
     rows = data.ranking_rows(None if service == "Geral" else service)
     if not rows:
         st.info("Ainda não há empresas ranqueadas. Faça uma análise primeiro.")
@@ -42,7 +43,7 @@ def render(service: str) -> None:
     shown = [r for r in rows if not (only_pending and r["feedback"])]
     st.caption(f"{len(shown)} de {len(rows)} empresas · {sum(bool(r['feedback']) for r in rows)} já avaliadas")
     df = table(shown)
-    event = st.dataframe(df, hide_index=True, use_container_width=True, height=min(650, 70 + len(df) * 36),
+    event = st.dataframe(df, hide_index=True, width="stretch", height=min(650, 70 + len(df) * 36),
                          on_select="rerun", selection_mode="single-row", key="ranking_table",
                          column_config={"#": st.column_config.NumberColumn(width="small"), "Oportunidade": st.column_config.TextColumn(width="medium"),
                                         "Hipótese": st.column_config.TextColumn(width="large")})
@@ -54,12 +55,15 @@ def render(service: str) -> None:
         st.caption("Selecione uma linha para avaliar a empresa.")
 
     x, y = st.columns(2)
-    x.download_button("⬇️ Baixar Excel", _xlsx(df), "asimov_ranking.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
-    y.download_button("⬇️ Baixar CSV", df.to_csv(index=False).encode("utf-8-sig"), "asimov_ranking.csv", "text/csv", use_container_width=True)
+    x.download_button("⬇️ Baixar Excel", _xlsx(df), "asimov_ranking.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", width="stretch")
+    y.download_button("⬇️ Baixar CSV", df.to_csv(index=False).encode("utf-8-sig"), "asimov_ranking.csv", "text/csv", width="stretch")
 
 
-def _reapply_banner() -> None:
+def _reapply_banner(user: User) -> None:
     st.info("Há um aprendizado novo ainda não aplicado ao ranking. A reaplicação usa as páginas já coletadas (não acessa os sites).")
+    if not user.is_admin:
+        st.caption("Um administrador pode aplicar o aprendizado ao ranking.")
+        return
     if not st.button("Aplicar aprendizado ao ranking", type="primary"):
         return
     progress = RunProgress(len(data.ranking_rows()))
@@ -67,7 +71,7 @@ def _reapply_banner() -> None:
         with st.spinner("Reprocessando o ranking…"):
             data.reapply(progress)
     except RunInProgress as exc:
-        explain_busy(exc)
+        explain_busy(exc, user)
         return
     progress.finish()
     st.rerun()

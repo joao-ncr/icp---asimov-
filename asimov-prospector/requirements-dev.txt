@@ -1,0 +1,4 @@
+# Desenvolvimento e verificacao (testes e auditoria de dependencias). Producao usa so requirements.txt.
+-r requirements.txt
+pytest>=8.0
+pip-audit>=2.7

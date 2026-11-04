@@ -14,7 +14,7 @@ if not exist ".venv\Scripts\python.exe" (
   if errorlevel 1 goto erro
 )
 echo Abrindo o Asimov Prospector no navegador...
-.venv\Scripts\python.exe -m streamlit run app\ui\streamlit_app.py
+.venv\Scripts\python.exe -m streamlit run app\ui\streamlit_app.py --server.address localhost
 if errorlevel 1 goto erro
 goto fim
 :erro

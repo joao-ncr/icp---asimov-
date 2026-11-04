@@ -1,7 +1,8 @@
 """Ranking de oportunidades: leitura direta do banco (ordenacao e limite em SQL; JSON so das linhas devolvidas)."""
 from __future__ import annotations
 import json
-from app.scoring.score import SERVICES
+from app.scoring.score import AXES
+
 
 FINAL = "FINAL"
 
@@ -20,7 +21,7 @@ ORDER BY s.value DESC, a.id
 
 def ranking(conn, run_id: int | None = None, service: str | None = None, limit: int | None = None) -> list[dict]:
     """Ultima analise 'ranked' de cada empresa, da maior para a menor pontuacao (geral ou de um servico)."""
-    if service is not None and service not in SERVICES:
+    if service is not None and service not in AXES:
         raise ValueError(f"Serviço desconhecido: {service!r}")
     params: list = [service or FINAL]
     if run_id:

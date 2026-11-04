@@ -1,0 +1,54 @@
+# Integracao com o Ploomes CRM — ESTRITAMENTE SOMENTE LEITURA (o cliente so envia GET; ver integrations/ploomes/client.py).
+# Regras de negocio da integracao ficam aqui, fora do codigo. Verificado contra a API em 2026-11-04.
+api:
+  page_size: 300                 # maximo aceito pela API (OData $top)
+  max_pages: 100                 # teto por consulta: 30.000 registros (protege contra laco infinito/abuso)
+  timeout_s: 30
+  max_retries: 3                 # so para 429/5xx e falhas de transporte
+  min_sync_interval_s: 300       # intervalo minimo entre sincronizacoes (protege a cota da API e cliques repetidos)
+  incremental_overlap_hours: 24  # janela de sobreposicao do cursor incremental (LastUpdateDate)
+
+company_type_id: 1               # Contacts.TypeId: 1 = empresa, 2 = pessoa (pessoas nunca sao lidas)
+person_type_id: 2
+deal_status: {open: 1, won: 2, lost: 3}     # Deals@Status: Em aberto / Ganha / Perdida
+
+# Funis considerados (id -> nome exato no Ploomes). Negocios de outros funis sao ignorados e apenas contados.
+pipelines:
+  37801: Funil Ativa
+  52351: Funil Passivo
+  52763: Funil Tráfego Pago
+  52822: Listas de prospecção
+pipeline_funnel: {37801: ativo, 52351: passivo, 52763: trafego_pago, 52822: lista_prospeccao}
+
+# Campos personalizados, resolvidos pelo NOME via /Fields (o GUID muda entre contas; o nome e o contrato).
+custom_fields:
+  contact:
+    registration_alert: Alerta de Cadastro
+  deal:
+    best_offer: Melhor Oferta
+    priority: Prioridade revisada
+    segment: Segmento
+
+# Nome do motivo de perda (sem acento, minusculo) -> categoria do anti-ICP (scoring.yaml: anti_icp).
+# Motivo desconhecido ou ausente -> other (nao exclui). O Ploomes tem duas listas com os mesmos nomes: o mapa e por nome.
+loss_categories:
+  esta fora do icp: outside_icp
+  nao possui dor que conseguimos solucionar: no_solvable_pain
+  lead desqualificado: disqualified
+  nao possui orcamento: no_budget
+  nao aceitou termos do contrato: contract_terms
+  nao aceitou termo do contrato: contract_terms
+  nao e prioridade: not_priority
+  timing / prioridade: not_priority
+  nao respondeu: no_response
+  nao quis ouvir: no_response
+  nao consegui mais contato: no_response
+  sem contato a mais de 10 dias: no_response
+  nao compareceu na reuniao 2x: no_response
+  pesquisou mais sobre e desistiu da reuniao: no_response
+default_loss_category: other
+
+# LGPD: propriedades da API que NUNCA podem ser pedidas ($select/$expand). O cliente recusa a consulta antes da rede.
+forbidden_fields: [Phones, Phone, Email, Emails, EmailAddresses, Birthday, CPF, Register, RG, StreetAddress, StreetAddressNumber,
+                   StreetAddressLine2, Neighborhood, ZipCode, Latitude, Longitude, Skype, Facebook, Role, RoleId, Department,
+                   DepartmentId, Contacts, Owner, OwnerId, Creator, Updater, Notes, Note]

@@ -1,11 +1,13 @@
 """Acesso a dados da interface. Cada chamada usa uma conexao de vida curta (`session`); nada de conexao global."""
 from __future__ import annotations
+import io
 import pandas as pd
 import streamlit as st
 from app.core.settings import get_settings
 from app.core.utils import jdump, norm_domain
 from app.database.db import now, session
 from app.database.run_lock import current_holder, force_release
+from app.discovery import feed as discovery_feed
 from app.discovery import generation as discovery_generation
 from app.discovery import review as discovery_review
 from app.discovery.dedup import upsert_org
@@ -89,6 +91,18 @@ def run_discovery_generation(uploaded_file, filename: str, triggered_by: str) ->
     """Lê o CSV de dados abertos de CNPJ enviado pelo admin e cria candidatos pendentes de aprovação (sem rede)."""
     with session() as conn:
         return discovery_generation.run_generation(conn, uploaded_file, filename, triggered_by)
+
+
+def discovery_feed_configured() -> bool:
+    return discovery_feed.is_configured(get_settings(), discovery_generation.rules().get("feed"))
+
+
+def run_discovery_from_feed(triggered_by: str) -> discovery_generation.GenerationReport:
+    """Baixa a lista mensal de CNPJ publicada pelo GitHub Actions e cria candidatos pendentes de aprovação.
+    O download acontece antes de abrir o banco, para não segurar conexão durante a rede."""
+    feed_file = discovery_feed.fetch_latest(get_settings(), discovery_generation.rules().get("feed"))
+    with session() as conn:
+        return discovery_generation.run_generation(conn, io.BytesIO(feed_file.content), feed_file.label, triggered_by)
 
 
 def decide_discovery(candidate_ids: list[int], approve: bool, decided_by: str) -> list[Candidate]:

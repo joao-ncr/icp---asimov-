@@ -2,6 +2,21 @@
 # Regra de negocio fora do codigo: o time comercial ajusta CNAE/UF/municipio sem precisar de deploy.
 min_generation_interval_hours: 24
 max_candidates_per_run: 500
+
+# Coleta automatica (sem upload manual): todo mes o GitHub Actions (.github/workflows/cnpj-feed.yml) baixa a base da
+# Receita, filtra pelos ICPs abaixo e publica so o recorte como release do repositorio. Ver app/discovery/receita_feed.py.
+receita:
+  # Compartilhamento publico da Receita (SERPRO+/Nextcloud), uma pasta por mes (AAAA-MM). Se a Receita mudar o link, so trocar aqui.
+  share_url: https://arquivos.receitafederal.gov.br/public.php/dav/files/gn672Ad4CF8N6TK/Dados/Cadastros/CNPJ
+  # 2135 = empresario individual/MEI: a razao social traz nome e CPF da pessoa (LGPD) e o porte foge do ICP.
+  exclude_naturezas: ["2135"]
+# Onde o app busca a lista pronta (release do repositorio privado; token somente leitura em CNPJ_FEED_TOKEN no .env).
+feed:
+  repo: joao-ncr/icp---asimov-
+  release_tag: cnpj-feed
+  asset: cnpj_icp.csv
+  max_mb: 50
+
 icps:
   - id: industria_sul_mg
     name: "Industria - Sul de Minas"

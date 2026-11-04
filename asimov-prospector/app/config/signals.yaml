@@ -45,13 +45,51 @@ signals:
   - {code: AUTOMATION_MANUAL, category: AUTOMATION_SIGNAL, kind: need, source: text, strength: 0.7, observability: baixa,
      description: "Mencao a planilhas, papel, processo manual, WhatsApp operacional.",
      interpretation: "Processo possivelmente manual/fragmentado; digitalizacao pode reduzir retrabalho.",
-     services: {software: 0.8, aplicativo: 0.4, dados: 0.4},
+     services: {software: 0.8, aplicativo: 0.4, dados: 0.4, automacao: 0.5},
      patterns: ['planilhas?', 'processos? manuais?', 'controle manual', 'em papel', 'fichas? de papel', 'pelo whatsapp', 'via whatsapp']}
   - {code: MOBILE_CUSTOMER, category: MOBILE_SIGNAL, kind: need, source: text, strength: 0.4, observability: baixa,
      description: "Relacionamento recorrente com usuarios (pedidos, acompanhamento, pacientes, alunos).",
      interpretation: "Pode haver espaco para canal mobile com o cliente.",
      services: {aplicativo: 0.6, software: 0.2},
      patterns: ['acompanhe (seu|seus|sua|suas)', 'pedidos online', 'delivery', 'alunos', 'pacientes', 'clientes recorrentes']}
+  # --- Criterios v2 (portfolio ampliado: automacao, engenharia de dados, LLM em engenharia, colaboracao entre areas) ---
+  # concreteness: concrete = a pagina descreve uma DOR/necessidade; contextual = apenas descreve a atividade (compatibilidade
+  # superficial: sozinha nao sustenta fit alto, ver evidence.contextual_fit_cap). collaboration: peso do sinal na dimensao propria.
+  - {code: DATA_MANUAL_TRANSFER, category: DATA_SIGNAL, kind: need, source: text, strength: 0.75, observability: baixa, concreteness: concrete,
+     description: "Transferencia/consolidacao manual de dados entre planilhas e sistemas.",
+     interpretation: "Dados movidos ou conferidos manualmente entre ferramentas: candidato a integracao e automacao de fluxo de dados.",
+     services: {dados: 0.8, automacao: 0.7, software: 0.3},
+     patterns: ['digitac(ao|oes) manua(l|is)', 'lancamentos? manua(l|is)', 'transferencia manual', 'copiar e colar', 'conferencia manual', 'consolidac(ao|oes) (de|dos) (dados|planilhas|relatorios)', 'dados? (em|de) planilhas? (para|no) sistema']}
+  - {code: DATA_SYSTEMS_FRAGMENTED, category: DATA_SIGNAL, kind: need, source: text, strength: 0.7, observability: baixa, concreteness: concrete, collaboration: 0.5,
+     description: "Dados espalhados em sistemas/ferramentas que nao se comunicam.",
+     interpretation: "Informacao fragmentada entre sistemas: necessidade de integracao e estruturacao de bases.",
+     services: {dados: 0.8, software: 0.5, automacao: 0.5},
+     patterns: ['integrac(ao|oes) (entre|de) (sistemas|plataformas|ferramentas)', 'sistemas? (diferentes|distintos|separados|desconectados|isolados)', 'dados (espalhados|dispersos|descentralizados|fragmentados)', 'informac(ao|oes) (espalhadas?|dispersas?|descentralizadas?)', 'sistemas? que nao (se )?(comunicam|conversam|integram)']}
+  - {code: AUTOMATION_REPETITIVE, category: AUTOMATION_SIGNAL, kind: need, source: text, strength: 0.7, observability: baixa, concreteness: concrete,
+     description: "Tarefas repetitivas, retrabalho ou rotinas manuais recorrentes.",
+     interpretation: "Rotina repetitiva/retrabalho sugere processo automatizavel.",
+     services: {automacao: 0.8, software: 0.5, dados: 0.3},
+     patterns: ['tarefas? repetitivas?', 'retrabalho', 'rotinas? (manuais?|repetitivas?)', 'emissao manual', 'aprovac(ao|oes) (manua(l|is)|por e-?mail)', 'automatizar (processos|rotinas|tarefas)']}
+  - {code: ENGINEERING_TECHNICAL_DOCS, category: AUTOMATION_SIGNAL, kind: need, source: text, strength: 0.5, observability: media, concreteness: contextual,
+     description: "Producao recorrente de documentos tecnicos de engenharia (laudos, memoriais, projetos, orcamentos de obra).",
+     interpretation: "Atividade documental tecnica recorrente: possivel espaco para LLM/automacao de engenharia (a confirmar se ha dor).",
+     services: {automacao: 0.7, dados: 0.3},
+     patterns: ['memorial descritivo', 'laudos? tecnicos?', 'projetos? (eletricos?|estruturais?|hidraulicos?|executivos?)', 'orcamentos? de obras?', 'especificac(ao|oes) tecnicas?', 'normas? tecnicas?', 'pareceres? tecnicos?', 'estudos? de viabilidade']}
+  - {code: MOBILE_FIELD_FORMS, category: MOBILE_SIGNAL, kind: need, source: text, strength: 0.65, observability: baixa, concreteness: concrete,
+     description: "Checklists, apontamentos ou formularios de campo registrados em papel/planilha.",
+     interpretation: "Registro de campo possivelmente manual: candidato a aplicativo com coleta e sincronizacao.",
+     services: {aplicativo: 0.8, dados: 0.4, automacao: 0.3},
+     patterns: ['checklists? (em papel|manua(l|is)|impressos?)', 'apontamentos? (de campo|manua(l|is)|em papel)', 'formularios? (de campo|em papel|impressos?)', 'relatorios? de campo', 'registro (em papel|manual) (no|em) campo']}
+  - {code: SOFTWARE_CUSTOM_NEED, category: MANAGEMENT_SIGNAL, kind: need, source: text, strength: 0.75, observability: baixa, concreteness: concrete,
+     description: "Declara necessidade de sistema sob medida ou controles improvisados.",
+     interpretation: "Controles improvisados ou busca explicita por sistema proprio: necessidade de software personalizado.",
+     services: {software: 0.85, automacao: 0.3, dados: 0.3},
+     patterns: ['sistema sob medida', 'sistema personalizado', 'controle (feito )?em (excel|planilhas?)', 'nao (temos|possuimos) (um )?sistema', 'precisamos de (um )?(sistema|aplicativo|software)', 'sistema (atual )?nao atende']}
+  - {code: COLLABORATION_CROSS_AREA, category: COLLABORATION_SIGNAL, kind: need, source: text, strength: 0.6, observability: baixa, concreteness: concrete, collaboration: 0.8,
+     description: "Processo que depende de varias areas/equipes/especialidades trabalhando de forma integrada.",
+     interpretation: "Problema que atravessa areas: a solucao tende a exigir mais de uma especialidade (software, mobile, dados).",
+     services: {},
+     patterns: ['multidisciplinar(es)?', 'integrac(ao|oes) entre (areas|setores|departamentos|equipes)', 'comunicacao entre (areas|setores|departamentos|equipes)', '(varias|diversas|diferentes) areas (da empresa|envolvidas)', 'setores? (nao )?(se )?(comunicam|conversam)']}
   - {code: GROWTH_SIGNAL, category: GROWTH_SIGNAL, kind: context, source: text, strength: 0.3, observability: media,
      description: "Vagas, expansao, nova unidade.",
      interpretation: "Crescimento pode indicar capacidade de investir (contexto, nao dor).",

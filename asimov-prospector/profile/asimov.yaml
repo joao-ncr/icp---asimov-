@@ -29,6 +29,12 @@ services:
     stack: [Python, Power BI, Machine Learning]
     problems_solved: [relatorios manuais, falta de indicadores, decisao sem apoio de dados, previsao]
     hypothesis_template: "A presenca de {signals} pode indicar oportunidade de dashboards/automacao de relatorios e analise de dados."
+  - id: automacao
+    name: Engenharia e automacao inteligente
+    stack: [Python, LLMs proprias para engenharia, integracao de sistemas]
+    problems_solved: [processos automatizaveis, integracao entre ferramentas e sistemas, transferencia e estruturacao de dados, automacao de atividades tecnicas e operacionais]
+    # portfolio informado pela Asimov Jr. (briefing de evolucao dos criterios); nao confirmado no site publico
+    hypothesis_template: "Os sinais ({signals}) sugerem rotinas manuais ou dados desconectados que podem ser automatizados e integrados (a confirmar em diagnostico)."
 case_studies:
   - {id: sanfran, client: SanFran Jr. (FDUSP), service: site, problem: "site institucional completo (design a desenvolvimento)", verified: true, source: asimovjr.com.br}
   - {id: engepro, client: EngePro, service: site, problem: captacao de clientes, verified: false, source: briefing}

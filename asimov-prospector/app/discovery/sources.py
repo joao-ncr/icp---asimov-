@@ -24,25 +24,31 @@ def from_seed_csv(path: Path) -> list[Candidate]:
     return out
 
 
-def from_cnpj_csv(path: Path, cnae_prefixes: list[str], uf: str | None, municipios: list[str] | None, limit: int = 500) -> list[Candidate]:
-    """Espera CSV ja tratado com colunas: cnpj,razao_social,nome_fantasia,cnae,uf,municipio,porte,situacao.
+def candidates_from_cnpj_rows(rows: list[dict], cnae_prefixes: list[str], uf: str | None, municipios: list[str] | None,
+                              limit: int = 500) -> list[Candidate]:
+    """Filtra linhas ja lidas de um CSV de dados abertos de CNPJ (colunas: cnpj,razao_social,nome_fantasia,cnae,uf,
+    municipio,porte,situacao). Funcao pura: nao le arquivo, reutilizavel por multiplos filtros de ICP sobre o mesmo CSV.
     (Nao armazena socios nem contatos de pessoas fisicas - minimizacao LGPD.)"""
     out = []
-    with open(path, encoding="utf-8-sig") as f:
-        for r in csv.DictReader(f):
-            if (r.get("situacao") or "ATIVA").upper() not in ("ATIVA", "02"):
-                continue
-            if cnae_prefixes and not any((r.get("cnae") or "").startswith(p) for p in cnae_prefixes):
-                continue
-            if uf and (r.get("uf") or "").upper() != uf.upper():
-                continue
-            if municipios and (r.get("municipio") or "").lower() not in [m.lower() for m in municipios]:
-                continue
-            out.append(Candidate(name=(r.get("nome_fantasia") or r.get("razao_social") or "").strip(), cnpj=re.sub(r"\D", "", r.get("cnpj") or "") or None,
-                                 cnae=r.get("cnae"), uf=r.get("uf"), municipio=r.get("municipio"), porte=r.get("porte"), source="cnpj_open_data"))
-            if len(out) >= limit:
-                break
+    for r in rows:
+        if (r.get("situacao") or "ATIVA").upper() not in ("ATIVA", "02"):
+            continue
+        if cnae_prefixes and not any((r.get("cnae") or "").startswith(p) for p in cnae_prefixes):
+            continue
+        if uf and (r.get("uf") or "").upper() != uf.upper():
+            continue
+        if municipios and (r.get("municipio") or "").lower() not in [m.lower() for m in municipios]:
+            continue
+        out.append(Candidate(name=(r.get("nome_fantasia") or r.get("razao_social") or "").strip(), cnpj=re.sub(r"\D", "", r.get("cnpj") or "") or None,
+                             cnae=r.get("cnae"), uf=r.get("uf"), municipio=r.get("municipio"), porte=r.get("porte"), source="cnpj_open_data"))
+        if len(out) >= limit:
+            break
     return out
+
+
+def from_cnpj_csv(path: Path, cnae_prefixes: list[str], uf: str | None, municipios: list[str] | None, limit: int = 500) -> list[Candidate]:
+    with open(path, encoding="utf-8-sig") as f:
+        return candidates_from_cnpj_rows(list(csv.DictReader(f)), cnae_prefixes, uf, municipios, limit)
 
 
 def searx(s: Settings, query: str, n: int = 10) -> list[dict]:

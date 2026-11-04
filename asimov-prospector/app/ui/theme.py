@@ -6,6 +6,7 @@ azul #007FFF (primária), navy #0A0E23 / #0F142C (fundos e texto escuros)."""
 from __future__ import annotations
 import base64
 from functools import lru_cache
+from html import escape
 from pathlib import Path
 import streamlit as st
 from PIL import Image
@@ -72,17 +73,20 @@ def brand() -> None:
                 f'<div><div class="brand-name">{BRAND_NAME}</div><div class="brand-sub">Prospector · Operação</div></div></div>', unsafe_allow_html=True)
 
 
+# Todo texto interpolado no HTML abaixo passa por escape: nome e site vêm do CRM (texto livre digitado por pessoas).
 def hero(title: str, text: str) -> None:
-    st.markdown(f'<div class="hero"><h1>{title}</h1><p>{text}</p></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="hero"><h1>{escape(title)}</h1><p>{escape(text)}</p></div>', unsafe_allow_html=True)
 
 
 def step(number: int, title: str, text: str) -> None:
-    st.markdown(f'<div class="step"><div class="step-num">{number}</div><div class="step-title">{title}</div><div class="step-text">{text}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="step"><div class="step-num">{int(number)}</div><div class="step-title">{escape(title)}</div>'
+                f'<div class="step-text">{escape(text)}</div></div>', unsafe_allow_html=True)
 
 
 def company_card(name: str, domain: str | None) -> None:
-    st.markdown(f'<div class="card"><div class="card-title">{name}</div><div class="muted">{domain or "sem site informado"}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card"><div class="card-title">{escape(name)}</div>'
+                f'<div class="muted">{escape(domain or "sem site informado")}</div></div>', unsafe_allow_html=True)
 
 
 def notice(text: str) -> None:
-    st.markdown(f'<div class="notice">{text}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="notice">{escape(text)}</div>', unsafe_allow_html=True)

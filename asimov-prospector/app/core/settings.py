@@ -40,6 +40,12 @@ class Settings:
     cache_ttl_days: int = int(os.getenv("CACHE_TTL_DAYS", "14"))
     retention_days: int = int(os.getenv("RETENTION_DAYS", "90"))
     max_retries: int = 2
+    # Ploomes CRM (somente leitura). Segredo: fora do repr para nunca aparecer em logs/tracebacks.
+    ploomes_user_key: str = field(default_factory=lambda: os.getenv("PLOOMES_USER_KEY", "").strip(), repr=False)
+    # Acesso a interface: "password" (padrao; usuarios em APP_USERS) ou "local" (sem login, so aceita conexoes da propria maquina).
+    auth_mode: str = field(default_factory=lambda: os.getenv("AUTH_MODE", "password").strip().lower())
+    app_users: str = field(default_factory=lambda: os.getenv("APP_USERS", ""), repr=False)    # "usuario=hash;usuario2=hash"
+    app_admins: str = field(default_factory=lambda: os.getenv("APP_ADMINS", ""))              # "usuario,usuario2"
     config_dir: Path = ROOT / "app" / "config"
     profile_dir: Path = ROOT / "profile"
     prompts_dir: Path = ROOT / "prompts"

@@ -6,7 +6,7 @@ Instruções de projeto para o Claude Code. Idioma de comunicação, commits e d
 
 **Asimov Prospector** (`asimov-prospector/`): ferramenta interna de inteligência de prospecção B2B da Asimov Jr. Analisa informações públicas de empresas, detecta sinais de problemas operacionais/digitais/dados, relaciona-os aos serviços da Asimov e entrega um ranking para revisão humana.
 
-Fluxo: `Planilha → Analisar → Ranking → Evidências → Avaliação humana → Exportar para Comercial`.
+Fluxo: `Ploomes (CRM) / lista própria / geração de leads novos (CNPJ aberto) → Analisar → Ranking → Evidências → Avaliação humana → Exportar para Comercial`.
 
 Detalhes de uso e arquitetura: [asimov-prospector/README.md](asimov-prospector/README.md).
 
@@ -16,11 +16,12 @@ Monólito modular em `asimov-prospector/app/`, separando o motor de inteligênci
 
 | Módulo | Responsabilidade |
 |---|---|
-| `config/` | `scoring.yaml`, `signals.yaml` (regras fora do código) |
-| `core/` | settings, profile, utilitários |
+| `config/` | `scoring.yaml`, `signals.yaml`, `ploomes.yaml`, `icp.yaml` (regras fora do código) |
+| `core/` | settings, profile, utilitários, `auth.py` (login/hash/throttle) |
 | `crawler/` | fetch, extração, proteção SSRF, limites e cache |
 | `extraction/` | limpeza/extração de texto |
-| `discovery/` | fontes, queries, dedup, leads, `historical.py` (base histórica de prospecção → tabela `lead_history`) |
+| `discovery/` | fontes, queries, dedup, leads, `historical.py` (base histórica → `lead_history`), `generation.py`/`review.py` (leads novos via CNPJ aberto, com aprovação humana) |
+| `integrations/ploomes/` | cliente somente leitura do CRM Ploomes, mapeamento e sincronização incremental |
 | `intelligence/` | sinais, LLM, embeddings |
 | `scoring/` | score determinístico, anti-ICP, explicabilidade |
 | `database/` | SQLite (`schema.sql`, `db.py`) |
@@ -45,6 +46,9 @@ Monólito modular em `asimov-prospector/app/`, separando o motor de inteligênci
 - **Requisito central:** análise → ranking → o time comercial avalia cada lead em 3 níveis (`boa`/`neutra`/`ruim`) → o feedback calibra o scoring (`scoring/calibration.py`, só ativa com amostra mínima, ajustes limitados) → com volume suficiente, geração de leads novos. Não adicionar métricas/rótulos de confiança na UI sem base estatística.
 - Identidade visual (Asimov Jr.): azul #007FFF e navy do site; CSS em `ui/theme.py` deve funcionar nos modos claro e escuro (usar `inherit`/`currentColor`/`color-mix`, nunca fundo ou texto fixos); tema base em `.streamlit/config.toml`; logo e mascote em `ui/assets/`.
 - Uma rodada por vez: `database/run_lock.py` (`exclusive_run`). Leads semelhantes (dedup) são analisados uma única vez por rodada.
+- **Ploomes é somente leitura.** `integrations/ploomes/client.py` só expõe GET; nenhuma escrita no CRM, em nenhuma circunstância.
+- **Login obrigatório no deploy.** `AUTH_MODE=password` (padrão) exige usuário/senha (`core/auth.py`); `AUTH_MODE=local` só é seguro em uso local (aceita só conexões da própria máquina).
+- **Leads gerados (CNPJ aberto) nunca pulam a aprovação humana.** Candidatos de `discovery/generation.py` ficam em `discovery_candidate` até alguém aprovar ou rejeitar (`discovery/review.py`); só aprovados viram organização e entram na análise.
 - Futuros módulos **Comercial** e **Administração** devem plugar na camada de operação sem reescrever crawler, scoring ou banco.
 
 ## Clean code (prioridade)
@@ -62,7 +66,7 @@ Monólito modular em `asimov-prospector/app/`, separando o motor de inteligênci
 
 ## Testes e validação
 
-- Suíte atual deve permanecer verde (`43 passed`): `python -m pytest -q` (dentro de `asimov-prospector/`, com a `.venv` ativa).
+- Suíte atual deve permanecer verde (`171 passed`): `python -m pytest -q` (dentro de `asimov-prospector/`, com a `.venv` ativa).
 - Todo comportamento novo de scoring, crawler (especialmente SSRF) ou extração vem com teste.
 - Métricas da demo **não** representam performance comercial; validação real exige 50–100 avaliações humanas.
 - Rodar a UI: `python run.py ui`. Setup: `python run.py setup`.

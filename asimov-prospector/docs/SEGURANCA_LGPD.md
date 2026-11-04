@@ -10,7 +10,7 @@
 | Abuso do alvo | robots.txt (4xx=permitido, 5xx=bloqueado), atraso por dominio, retry com backoff, cache, UA identificavel, **nao contorna 403/429** | idem |
 | Prompt injection indireta | texto externo = dado nao confiavel; frases com padroes de injection **nao geram evidencia**; texto oculto (display:none etc.) removido e sinalizado; penalidade no multiplicador de evidencia; **score calculado em codigo, nunca pelo LLM**; saida do LLM restrita a JSON schema; citacao do LLM verificada contra o texto | `crawler/extract.py`, `intelligence/llm.py`, `pipeline.py`, `tests/test_llm_guard.py` |
 | Alucinacao | evidencia so vale se o trecho existe literalmente na pagina citada; fato/inferencia/hipotese/ausencia em tipos distintos | `extraction/text.py` |
-| Segredos | `.env` fora do git; sem API key obrigatoria; logs sem HTML bruto | `.env.example`, `.gitignore` |
+| Segredos | `.env`/`secrets.toml` fora do git; `PLOOMES_USER_KEY` e hashes de senha fora do `repr()` de `Settings`; logs sem HTML bruto | `.env.example`, `.gitignore`, `core/settings.py` |
 
 **Limites conhecidos:** a protecao anti-rebinding detecta *apos* conectar (nao fixa o IP na conexao); rode o crawler em maquina/rede sem acesso a recursos internos sensiveis. Playwright nao esta implementado no MVP (se adicionar, isole em container sem acesso a rede interna). Um site pode *mentir* de forma plausivel: isso nao e injection e e tratado pela revisao humana. Detector de injection e baseado em padroes (PT/EN) e nao cobre todos os ataques.
 
@@ -20,4 +20,5 @@
 - **Finalidade:** avaliar compatibilidade comercial da oferta da Asimov. Qualquer contato futuro exigira base legal documentada (ex.: legitimo interesse com teste de balanceamento) e canal de oposicao — **valide com o encarregado/juridico da UNIFEI ou da federacao de EJs antes de abordar**.
 - **Retencao:** texto das paginas e cache sao temporarios; `python run.py purge --days 90` remove paginas e cache antigos. Analises ficam enquanto uteis.
 - **Transferencia internacional:** LLM e embeddings locais (default) evitam enviar dados a terceiros. Ao usar API externa, reavalie.
-- **Acesso:** execucao local; interface Streamlit so em localhost; disco criptografado recomendado.
+- **Acesso:** login obrigatorio no deploy (`AUTH_MODE=password`, usuarios/administradores em `APP_USERS`/`APP_ADMINS`, senhas com PBKDF2-SHA256 e bloqueio por tentativas); uso local sem login (`AUTH_MODE=local`) so aceita conexoes da propria maquina. Disco criptografado recomendado.
+- **CRM (Ploomes):** integracao somente leitura (so GET, imposto por codigo); a aba Pessoas do CRM nunca e lida; dados de contato/decisor/CPF nunca entram no banco.

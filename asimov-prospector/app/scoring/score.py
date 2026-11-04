@@ -6,7 +6,10 @@ from app.core.utils import clamp, load_yaml, norm_text, sha
 from app.intelligence.signals import taxonomy
 from app.models.schemas import SignalHit
 
-SERVICES = ["site", "aplicativo", "software", "dados"]
+SERVICES = ["site", "aplicativo", "software", "dados", "automacao"]
+COLLABORATION = "colaboracao"            # eixo proprio de oportunidade (nao e servico): ver collaboration_score
+AXES = SERVICES + [COLLABORATION]
+DISCIPLINES = ["aplicativo", "software", "dados", "automacao"]      # especialidades cuja combinacao caracteriza colaboracao
 
 
 @lru_cache
@@ -38,9 +41,33 @@ def service_fits(hits: dict[str, SignalHit], calibration=None) -> tuple[dict[str
         fit = 1 - p
         if contribs and len(contribs) < 2 and max(x for _, x in contribs) < c["weak_signal_threshold"] * 0.8:
             fit = min(fit, c["weak_fit_cap"])
+        if contribs and all(taxonomy()[code].get("concreteness") == "contextual" for code, _ in contribs):
+            fit = min(fit, c["contextual_fit_cap"])         # atividade descrita sem dor declarada != necessidade concreta
         fits[svc] = round(clamp(fit), 4)
         why[svc] = [code for code, _ in sorted(contribs, key=lambda t: -t[1])]
     return fits, why
+
+
+def collaboration_score(hits: dict[str, SignalHit], fits: dict[str, float], why: dict[str, list[str]]) -> tuple[float, list[str]]:
+    """Eixo proprio: necessidade que atravessa especialidades. Combina (a) sinais explicitos de colaboracao e (b) amplitude,
+    isto e, varias disciplinas sustentadas por sinais DISTINTOS (um unico sinal nao pode inflar varias disciplinas)."""
+    c = cfg()["collaboration"]
+    explicit = 1.0
+    for code, h in hits.items():
+        weight = taxonomy()[code].get("collaboration", 0)
+        if weight and h.kind == "need":
+            explicit *= 1 - min(0.99, weight * h.strength * h.confidence)
+    disciplines = [d for d in DISCIPLINES if fits[d] >= c["discipline_fit_min"] and _has_primary_signal(d, why[d], c["discipline_primary_weight"])]
+    supporting = {code for d in disciplines for code in why[d]}
+    breadth = 0.0
+    if len(disciplines) >= 2 and len(supporting) >= c["min_distinct_signals"]:
+        scale = c["breadth_score"]
+        breadth = scale[min(len(disciplines), max(scale))]
+    return round(clamp(1 - (1 - breadth) * explicit), 4), disciplines
+
+
+def _has_primary_signal(service: str, codes: list[str], minimum: float) -> bool:
+    return any(taxonomy()[code]["services"].get(service, 0) >= minimum for code in codes)
 
 
 def opportunity_gap(hits: dict[str, SignalHit], svc: str) -> float:
@@ -126,11 +153,17 @@ def compute_scores(hits, facts, text, pages, injection_flags, segment, known=Non
     eq, mult = evidence_quality(hits, pages, injection_flags)
     w = c["weights"]
     base = w["best_service_fit"] * fits[best] + w["secondary_fit"] * secondary + w["viability"] * via + w["opportunity_gap"] * gap
+    collab, disciplines = collaboration_score(hits, fits, why)
+    base = min(1.0, base + c["collaboration"]["max_bonus"] * collab)        # so soma: sem colaboracao o score nao muda
     learned_segment = calibration.for_segment(segment) if calibration else 1.0
     final = round(100 * base * mult * c.get("segment_multiplier", {}).get(segment, 1.0) * learned_segment, 1)
     b1 = round(100 * (0.6 * c["sector_prior"].get(segment, c["sector_prior"]["default"]) + 0.4 * via), 1)   # baseline setor/porte
     distinct = len({x.signal_code for h in hits.values() if h.kind == "need" for x in h.evidence if x.verified})
-    return {"service_scores": {s: round(100 * fits[s] * mult, 1) for s in SERVICES}, "service_fit_raw": fits, "best_service": best,
+    return {"criteria_version": c["criteria_version"],
+            "service_scores": {**{s: round(100 * fits[s] * mult, 1) for s in SERVICES}, COLLABORATION: round(100 * collab * mult, 1)},
+            "service_fit_raw": {**fits, COLLABORATION: collab}, "best_service": best,
+            "collaboration": collab, "collaboration_disciplines": disciplines,
+            "multidisciplinary": collab >= c["collaboration"]["flag_threshold"],
             "signals_by_service": why, "viability": via, "viability_notes": via_notes, "opportunity_gap": round(gap, 3),
             "evidence_quality": eq, "evidence_multiplier": mult, "final": final, "baseline_b1": b1,
             "need_signals_verified": distinct, "segment": segment, "calibration_version": calibration.version if calibration and calibration.active else 0,

@@ -226,8 +226,30 @@ def cmd_purge(a):
     print(f"paginas removidas: {cur.rowcount}; arquivos de cache removidos: {n}")
 
 
+def cmd_sync_ploomes(a):
+    """Le empresas e negocios do Ploomes (somente GET) e atualiza o banco local."""
+    from dataclasses import asdict
+    from app.integrations.ploomes.sync import client_from_settings, run_sync
+    c = db()
+    with client_from_settings(get_settings()) as client:
+        print(json.dumps(asdict(run_sync(c, client, a.by)), indent=1, ensure_ascii=False))
+
+
+def cmd_hash_password(a):
+    """Gera o hash de uma senha para APP_USERS (a senha digitada nao aparece nem e gravada)."""
+    from getpass import getpass
+    from app.core.auth import hash_password
+    password = getpass("Senha: ")
+    if password != getpass("Repita a senha: "):
+        sys.exit("As senhas não conferem.")
+    print(f"{a.username.strip().lower()}={hash_password(password)}")
+
+
 def cmd_ui(a):
-    subprocess.run([sys.executable, "-m", "streamlit", "run", str(ROOT / "app" / "ui" / "streamlit_app.py")], cwd=ROOT)   # cwd: carrega .streamlit/config.toml
+    command = [sys.executable, "-m", "streamlit", "run", str(ROOT / "app" / "ui" / "streamlit_app.py")]
+    if get_settings().auth_mode == "local":
+        command += ["--server.address", "localhost"]       # modo sem login: nunca exposto na rede
+    subprocess.run(command, cwd=ROOT)   # cwd: carrega .streamlit/config.toml
 
 
 def main():
@@ -251,6 +273,8 @@ def main():
     x = sp.add_parser("eval"); x.add_argument("--labels", required=True); x.set_defaults(f=cmd_eval)
     x = sp.add_parser("backtest-leads"); x.add_argument("--file", default="data/leads_enriched.csv"); x.set_defaults(f=cmd_backtest)
     x = sp.add_parser("purge"); x.add_argument("--days", type=int, default=get_settings().retention_days); x.set_defaults(f=cmd_purge)
+    x = sp.add_parser("sync-ploomes"); x.add_argument("--by", default="cli"); x.set_defaults(f=cmd_sync_ploomes)
+    x = sp.add_parser("hash-password"); x.add_argument("username"); x.set_defaults(f=cmd_hash_password)
     x = sp.add_parser("ui"); x.set_defaults(f=cmd_ui)
     a = p.parse_args(); a.f(a)
 

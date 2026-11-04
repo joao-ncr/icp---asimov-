@@ -1,0 +1,17 @@
+# Geracao de leads novos a partir de dados abertos de CNPJ (Receita Federal), filtrados por ICP.
+# Regra de negocio fora do codigo: o time comercial ajusta CNAE/UF/municipio sem precisar de deploy.
+min_generation_interval_hours: 24
+max_candidates_per_run: 500
+icps:
+  - id: industria_sul_mg
+    name: "Industria - Sul de Minas"
+    segment: industria
+    cnae_prefixes: ["25", "28"]
+    uf: MG
+    municipios: [itajuba, "pouso alegre", varginha, "pocos de caldas", "santa rita do sapucai", lavras]
+  - id: servicos_tecnicos_sul_mg
+    name: "Servicos tecnicos - Sul de Minas"
+    segment: servicos_tecnicos
+    cnae_prefixes: ["43", "71", "33"]
+    uf: MG
+    municipios: [itajuba, "pouso alegre", varginha, "pocos de caldas", "santa rita do sapucai", lavras]

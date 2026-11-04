@@ -1,6 +1,7 @@
 """Componentes compartilhados entre as telas: progresso de rodada, aviso de rodada ocupada e andamento do aprendizado."""
 from __future__ import annotations
 import streamlit as st
+from app.core.auth import User
 from app.database.run_lock import RunInProgress
 from app.feedback.store import LEVEL_LABELS
 from app.scoring.explain import SERVICE_NAMES
@@ -38,9 +39,11 @@ class RunProgress:
         self.box.empty()
 
 
-def explain_busy(exc: RunInProgress) -> None:
-    """Outra rodada está ativa (nesta ou em outra aba): avisa e oferece liberar a trava só se for seguro."""
+def explain_busy(exc: RunInProgress, user: User) -> None:
+    """Outra rodada está ativa (nesta ou em outra aba): avisa e, só para administradores, oferece liberar a trava."""
     st.warning(f"{exc} Aguarde terminar e tente novamente.")
+    if not user.is_admin:
+        return
     with st.expander("A análise anterior foi interrompida?"):
         st.caption("A trava libera sozinha alguns minutos após a última atividade. Só libere agora se tiver certeza de que nenhuma análise está rodando.")
         if st.button("Liberar trava"):

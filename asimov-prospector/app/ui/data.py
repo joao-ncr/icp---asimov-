@@ -6,9 +6,13 @@ from app.core.settings import get_settings
 from app.core.utils import jdump, norm_domain
 from app.database.db import now, session
 from app.database.run_lock import current_holder, force_release
+from app.discovery import generation as discovery_generation
+from app.discovery import review as discovery_review
 from app.discovery.dedup import upsert_org
-from app.discovery.historical import ImportReport, history_for_org, historical_candidates, import_historical
+from app.discovery.historical import history_for_org
 from app.feedback.store import latest_feedback, learning_status, record_feedback
+from app.integrations.ploomes import repository as ploomes_repo
+from app.integrations.ploomes.sync import SyncReport, client_from_settings, run_sync
 from app.models.schemas import Candidate
 from app.pipeline import WebPageSource, analyze_org, reapply_learning, run_pipeline, start_run
 from app.ranking import data_version, ranking
@@ -56,6 +60,43 @@ def running_now() -> dict | None:
         return current_holder(conn)
 
 
+def ploomes_configured() -> bool:
+    return bool(get_settings().ploomes_user_key)
+
+
+def ploomes_overview() -> dict:
+    """Resumo das empresas vindas do CRM e a última sincronização (para a tela de análise)."""
+    with session() as conn:
+        return {"summary": ploomes_repo.summary(conn), "last_sync": ploomes_repo.last_sync(conn)}
+
+
+def ploomes_pending(limit: int) -> list[Candidate]:
+    with session() as conn:
+        return ploomes_repo.pending_candidates(conn, limit)
+
+
+def discovery_configured() -> bool:
+    return bool(discovery_generation.rules().get("icps"))
+
+
+def discovery_overview() -> dict:
+    """Resumo da geração de leads novos (CNPJ aberto) para a tela de análise: última geração e fila de aprovação."""
+    with session() as conn:
+        return {"last": discovery_generation.last_generation(conn), "pending": discovery_review.pending_candidates(conn)}
+
+
+def run_discovery_generation(uploaded_file, filename: str, triggered_by: str) -> discovery_generation.GenerationReport:
+    """Lê o CSV de dados abertos de CNPJ enviado pelo admin e cria candidatos pendentes de aprovação (sem rede)."""
+    with session() as conn:
+        return discovery_generation.run_generation(conn, uploaded_file, filename, triggered_by)
+
+
+def decide_discovery(candidate_ids: list[int], approve: bool, decided_by: str) -> list[Candidate]:
+    """Aprova (gera organização) ou rejeita candidatos pendentes; devolve os aprovados para a análise em lote."""
+    with session() as conn:
+        return discovery_review.decide(conn, candidate_ids, approve, decided_by)
+
+
 # --- escrita -----------------------------------------------------------------------------------------------------
 def save_evaluation(org_id: int, analysis_id: int, level: str, reason: str, author: str) -> None:
     with session() as conn:
@@ -67,14 +108,11 @@ def release_lock() -> None:
         force_release(conn)
 
 
-def import_history_base() -> ImportReport:
-    with session() as conn:
-        return import_historical(conn)
-
-
-def load_historical_candidates() -> list[Candidate]:
-    with session() as conn:
-        return historical_candidates(conn)
+def sync_ploomes(triggered_by: str) -> SyncReport:
+    """Lê o Ploomes (somente GET) e atualiza o banco local. Levanta RunInProgress, SyncTooSoon ou PloomesError."""
+    s = get_settings()
+    with session() as conn, client_from_settings(s) as client:
+        return run_sync(conn, client, triggered_by)
 
 
 def run_analysis(candidates: list[Candidate], run_cfg: dict, callback) -> int:

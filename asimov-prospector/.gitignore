@@ -9,3 +9,11 @@ data/prospects_report.csv
 data/demo.db
 data/*.db-wal
 data/*.db-shm
+# Dados reais de leads/CRM nunca vao para o repositorio (LGPD). Versionados so: templates sinteticos e o seed pseudonimizado dos testes.
+data/*.xlsx
+data/*.csv
+!data/seeds_demo.csv
+!data/seeds_template.csv
+!data/leads_seed.csv
+# Segredos do deploy (Streamlit Community Cloud)
+.streamlit/secrets.toml

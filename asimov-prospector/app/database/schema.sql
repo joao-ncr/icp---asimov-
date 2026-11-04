@@ -46,6 +46,23 @@ CREATE TABLE IF NOT EXISTS run_lock (id INTEGER PRIMARY KEY CHECK (id = 1), owne
 -- Aprendizado a partir do feedback humano: cada linha e um ajuste auditavel (params = multiplicadores por sinal/segmento).
 CREATE TABLE IF NOT EXISTS calibration (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT, n_labels INTEGER,
   last_feedback_id INTEGER, active INTEGER DEFAULT 0, params TEXT);
+-- Integracao Ploomes (somente leitura): vinculo empresa do CRM -> organizacao do Prospector (varias podem cair na mesma
+-- organizacao pela deduplicacao) e trilha de auditoria de cada sincronizacao (quem disparou, contagens, cursor incremental).
+CREATE TABLE IF NOT EXISTS ploomes_company (contact_id INTEGER PRIMARY KEY, org_id INTEGER NOT NULL REFERENCES organization(id),
+  last_update TEXT, synced_at TEXT);
+CREATE INDEX IF NOT EXISTS ix_ploomes_company_org ON ploomes_company(org_id);
+CREATE TABLE IF NOT EXISTS ploomes_sync (id INTEGER PRIMARY KEY AUTOINCREMENT, started_at TEXT, finished_at TEXT, status TEXT,
+  full_sync INTEGER, triggered_by TEXT, cursor TEXT, report TEXT, error TEXT);
 CREATE INDEX IF NOT EXISTS ix_analysis_org_status ON analysis(org_id, status, id);
 CREATE INDEX IF NOT EXISTS ix_score_an_svc ON score(analysis_id, service_id);
 CREATE INDEX IF NOT EXISTS ix_feedback_org ON human_feedback(org_id, id);
+-- Geracao de leads novos (dados abertos de CNPJ, filtrados por ICP): candidatos passam por aprovacao humana
+-- antes de virar organizacao (ver app/discovery/generation.py e app/discovery/review.py).
+CREATE TABLE IF NOT EXISTS discovery_generation (id INTEGER PRIMARY KEY AUTOINCREMENT, started_at TEXT, finished_at TEXT,
+  status TEXT, triggered_by TEXT, filename TEXT, report TEXT, error TEXT);
+CREATE TABLE IF NOT EXISTS discovery_candidate (id INTEGER PRIMARY KEY AUTOINCREMENT,
+  generation_id INTEGER REFERENCES discovery_generation(id), name TEXT, name_norm TEXT, cnpj TEXT, cnae TEXT, uf TEXT,
+  municipio TEXT, porte TEXT, segment TEXT, icp_id TEXT, rationale TEXT, status TEXT DEFAULT 'pending',
+  org_id INTEGER REFERENCES organization(id), decided_by TEXT, decided_at TEXT, created_at TEXT);
+CREATE INDEX IF NOT EXISTS ix_discovery_candidate_status ON discovery_candidate(status);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_discovery_candidate_cnpj ON discovery_candidate(cnpj) WHERE cnpj IS NOT NULL;

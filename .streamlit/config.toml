@@ -1,0 +1,16 @@
+# Identidade Asimov Jr. (paleta do site): azul primário nos dois modos; o usuário pode alternar claro/escuro no menu.
+[theme]
+primaryColor = "#007FFF"
+
+[theme.light]
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F4FA"
+textColor = "#0F142C"
+
+[theme.dark]
+backgroundColor = "#0A0E23"
+secondaryBackgroundColor = "#131A38"
+textColor = "#E8ECF8"
+
+[browser]
+gatherUsageStats = false

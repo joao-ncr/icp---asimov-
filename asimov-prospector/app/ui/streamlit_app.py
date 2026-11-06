@@ -15,10 +15,10 @@ import streamlit as st
 from app.database.db import ensure_ready
 from app.scoring.explain import SERVICE_NAMES
 from app.ui import auth, data, theme
-from app.ui.views import analysis, ranking, review
+from app.ui.views import analysis, guide, ranking, review
 from app.ui.views.common import backup_notice, learning_panel
 
-PAGES = {"Nova análise": analysis.render, "Ranking": ranking.render, "Avaliar": review.render}
+PAGES = {"Nova análise": analysis.render, "Ranking": ranking.render, "Avaliar": review.render, "Como usar": guide.render}
 
 st.set_page_config(page_title="Asimov Jr. · Prospector", page_icon=theme.page_icon(), layout="wide", initial_sidebar_state="expanded")
 theme.apply()

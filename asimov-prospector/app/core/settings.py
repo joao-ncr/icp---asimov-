@@ -44,6 +44,8 @@ class Settings:
     ploomes_user_key: str = field(default_factory=lambda: os.getenv("PLOOMES_USER_KEY", "").strip(), repr=False)
     # Lista mensal de CNPJ do ICP (release do repositorio privado): token GitHub somente leitura. Segredo, fora do repr.
     cnpj_feed_token: str = field(default_factory=lambda: os.getenv("CNPJ_FEED_TOKEN", "").strip(), repr=False)
+    # Copia de seguranca do banco no deploy (release do repositorio privado): token GitHub com escrita. Segredo, fora do repr.
+    db_backup_token: str = field(default_factory=lambda: os.getenv("DB_BACKUP_TOKEN", "").strip(), repr=False)
     # Acesso a interface: "password" (padrao; usuarios em APP_USERS) ou "local" (sem login, so aceita conexoes da propria maquina).
     auth_mode: str = field(default_factory=lambda: os.getenv("AUTH_MODE", "password").strip().lower())
     app_users: str = field(default_factory=lambda: os.getenv("APP_USERS", ""), repr=False)    # "usuario=hash;usuario2=hash"

@@ -1,12 +1,17 @@
 """Acesso a dados da interface. Cada chamada usa uma conexao de vida curta (`session`); nada de conexao global."""
 from __future__ import annotations
 import io
+import logging
+import threading
+from datetime import datetime, timezone
+from functools import lru_cache
 import pandas as pd
 import streamlit as st
 from app.core.settings import get_settings
 from app.core.utils import jdump, norm_domain
+from app.database import backup
 from app.database.db import now, session
-from app.database.run_lock import current_holder, force_release
+from app.database.run_lock import RunInProgress, current_holder, exclusive_run, force_release
 from app.discovery import feed as discovery_feed
 from app.discovery import generation as discovery_generation
 from app.discovery import review as discovery_review
@@ -14,11 +19,53 @@ from app.discovery.dedup import upsert_org
 from app.discovery.historical import history_for_org
 from app.feedback.store import latest_feedback, learning_status, record_feedback
 from app.integrations.ploomes import repository as ploomes_repo
-from app.integrations.ploomes.sync import SyncReport, client_from_settings, run_sync
+from app.integrations.ploomes.client import PloomesError
+from app.integrations.ploomes.mapping import rules as ploomes_rules
+from app.integrations.ploomes.sync import SyncReport, client_from_settings, run_sync, sync_is_due
 from app.models.schemas import Candidate
 from app.pipeline import WebPageSource, analyze_org, reapply_learning, run_pipeline, start_run
 from app.ranking import data_version, ranking
-from app.database.run_lock import exclusive_run
+
+
+logger = logging.getLogger(__name__)
+AUTO_SYNC_USER = "automatico"
+
+
+# --- ciclo de vida do processo -----------------------------------------------------------------------------------
+@lru_cache(maxsize=None)
+def start_persistence() -> backup.Persistence:
+    """Deploy: restaura a copia de seguranca do banco (se o disco veio vazio) e liga os envios. Chamar antes do banco."""
+    return backup.start(get_settings())
+
+
+def persistence_status() -> dict:
+    persistence = start_persistence()
+    scheduler = persistence.scheduler
+    return {"outcome": persistence.outcome.value, "last_ok_at": scheduler and scheduler.last_ok_at,
+            "last_error": scheduler and scheduler.last_error, "pending": bool(scheduler and scheduler.pending)}
+
+
+@lru_cache(maxsize=None)
+def start_ploomes_auto_sync() -> None:
+    """Uma vez por processo: se o historico do Ploomes estiver velho, sincroniza em segundo plano (a tela nao espera)."""
+    if not ploomes_configured():
+        return
+    threading.Thread(target=_auto_sync_ploomes, name="ploomes-auto-sync", daemon=True).start()
+
+
+def _auto_sync_ploomes() -> None:
+    with session() as conn:
+        last = ploomes_repo.last_successful_sync(conn)
+    if not sync_is_due(last, datetime.now(timezone.utc), ploomes_rules()["api"]["auto_sync_after_hours"]):
+        return
+    try:
+        report = sync_ploomes(AUTO_SYNC_USER)
+    except RunInProgress:
+        return                                  # alguem ja esta rodando algo; a proxima subida tenta de novo
+    except PloomesError as exc:                 # inclui SyncTooSoon; o erro fica registrado em ploomes_sync
+        logger.warning("Sincronizacao automatica do Ploomes falhou: %s", exc)
+        return
+    logger.info("Sincronizacao automatica do Ploomes: %s empresa(s) lidas", report.companies)
 
 
 # --- leitura -----------------------------------------------------------------------------------------------------

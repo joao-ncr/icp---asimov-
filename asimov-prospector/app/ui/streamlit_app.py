@@ -16,15 +16,17 @@ from app.database.db import ensure_ready
 from app.scoring.explain import SERVICE_NAMES
 from app.ui import auth, data, theme
 from app.ui.views import analysis, ranking, review
-from app.ui.views.common import learning_panel
+from app.ui.views.common import backup_notice, learning_panel
 
 PAGES = {"Nova análise": analysis.render, "Ranking": ranking.render, "Avaliar": review.render}
 
 st.set_page_config(page_title="Asimov Jr. · Prospector", page_icon=theme.page_icon(), layout="wide", initial_sidebar_state="expanded")
 theme.apply()
 auth.load_secrets_into_env()
+data.start_persistence()            # antes de qualquer conexao: no deploy, o disco pode ter vindo vazio
 user = auth.require_user()
 ensure_ready()
+data.start_ploomes_auto_sync()
 
 if "page" not in st.session_state:
     st.session_state["page"] = "Ranking" if data.ranking_rows() else "Nova análise"
@@ -38,6 +40,7 @@ with st.sidebar:
     learning_panel(compact=True)
     st.caption("O Prospector pesquisa informações públicas e sugere oportunidades. A decisão comercial continua humana.")
     st.divider()
+    backup_notice(user)
     auth.logout_button(user)
 
 PAGES[page](service, user)

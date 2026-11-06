@@ -235,6 +235,16 @@ def cmd_sync_ploomes(a):
         print(json.dumps(asdict(run_sync(c, client, a.by)), indent=1, ensure_ascii=False))
 
 
+def cmd_backup_push(a):
+    """Envia o banco local como a copia mais recente do deploy (o app publicado a restaura ao subir)."""
+    from app.database import backup
+    s = get_settings()
+    cfg = backup.load_config(s.config_dir)
+    if not backup.is_enabled(s, cfg):
+        sys.exit("Defina DB_BACKUP_TOKEN so neste terminal (nao no .env) para enviar o banco local.")
+    print(f"Copia enviada: {backup.publish_snapshot(s, cfg)} -> reinicie o app publicado (Reboot app).")
+
+
 def cmd_hash_password(a):
     """Gera o hash de uma senha para APP_USERS (a senha digitada nao aparece nem e gravada)."""
     from getpass import getpass
@@ -274,6 +284,7 @@ def main():
     x = sp.add_parser("backtest-leads"); x.add_argument("--file", default="data/leads_enriched.csv"); x.set_defaults(f=cmd_backtest)
     x = sp.add_parser("purge"); x.add_argument("--days", type=int, default=get_settings().retention_days); x.set_defaults(f=cmd_purge)
     x = sp.add_parser("sync-ploomes"); x.add_argument("--by", default="cli"); x.set_defaults(f=cmd_sync_ploomes)
+    x = sp.add_parser("backup-push"); x.set_defaults(f=cmd_backup_push)
     x = sp.add_parser("hash-password"); x.add_argument("username"); x.set_defaults(f=cmd_hash_password)
     x = sp.add_parser("ui"); x.set_defaults(f=cmd_ui)
     a = p.parse_args(); a.f(a)

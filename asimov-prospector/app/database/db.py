@@ -4,12 +4,14 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterator
+from typing import Callable, Iterator
 from app.core.settings import get_settings
 from app.database.migrations import apply_migrations
 
 SCHEMA = Path(__file__).with_name("schema.sql")
 BUSY_TIMEOUT_S = 30     # espera por lock de outro escritor (ex.: outra aba/processo do Streamlit) antes de falhar
+# Avisados depois de cada sessao que gravou algo (ex.: copia de seguranca do deploy). Nao fazem I/O no proprio aviso.
+_write_listeners: list[Callable[[], None]] = []
 
 
 def now() -> str:
@@ -28,6 +30,16 @@ def connect(path: str | Path | None = None) -> sqlite3.Connection:
     return conn
 
 
+def add_write_listener(listener: Callable[[], None]) -> None:
+    if listener not in _write_listeners:
+        _write_listeners.append(listener)
+
+
+def _notify_write() -> None:
+    for listener in _write_listeners:
+        listener()
+
+
 @contextmanager
 def session(path: str | Path | None = None) -> Iterator[sqlite3.Connection]:
     """Conexao de vida curta: commit se tudo der certo, rollback em erro, sempre fecha.
@@ -40,7 +52,10 @@ def session(path: str | Path | None = None) -> Iterator[sqlite3.Connection]:
         conn.rollback()
         raise
     finally:
+        wrote = conn.total_changes > 0
         conn.close()
+    if wrote:
+        _notify_write()
 
 
 def init_db(conn: sqlite3.Connection) -> None:

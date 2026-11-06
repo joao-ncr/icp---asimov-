@@ -309,6 +309,8 @@ candidatos e avalia empresas.
   em `APP_ADMINS`. Crie um usuário com `python run.py hash-password <usuario>`.
 - `AUTH_MODE=local`: sem login, só aceita conexões da própria máquina — use apenas para uso individual.
 - Segredos (token do GitHub, chave do Ploomes) ficam no `.env`, que **nunca** vai para o repositório.
+- Deploy no Streamlit Community Cloud (segredos, cópia de segurança do banco, sincronização automática do Ploomes):
+  `asimov-prospector/docs/DEPLOY_STREAMLIT.md`.
 - Detalhes dos controles (proteção contra acesso a endereços internos, injeção de instruções via conteúdo de sites,
   minimização de dados pessoais) em `asimov-prospector/docs/SEGURANCA_LGPD.md`.
 

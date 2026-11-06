@@ -11,6 +11,7 @@ def isolated_env(monkeypatch):
     """Isola a suite do .env do desenvolvedor: nenhum teste usa a chave real do Ploomes nem herda o modo de acesso.
     Testes que precisam de outro valor sobrescrevem com monkeypatch."""
     monkeypatch.setenv("PLOOMES_USER_KEY", "")
+    monkeypatch.setenv("DB_BACKUP_TOKEN", "")
     monkeypatch.setenv("AUTH_MODE", "local")
     monkeypatch.setenv("APP_USERS", "")
     monkeypatch.setenv("APP_ADMINS", "")

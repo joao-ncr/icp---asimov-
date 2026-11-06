@@ -35,7 +35,7 @@ def test_opens_on_ranking_with_learning_progress(populated_db):
 
 def test_every_page_renders(populated_db):
     at = _app()
-    for page in ("Nova análise", "Avaliar", "Ranking"):
+    for page in ("Nova análise", "Avaliar", "Ranking", "Como usar"):
         at.session_state["page"] = page
         at.run()
         assert not at.exception, page

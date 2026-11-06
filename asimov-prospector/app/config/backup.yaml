@@ -1,0 +1,10 @@
+# Copia de seguranca do banco SQLite no deploy. O Streamlit Community Cloud apaga o disco a cada reinicio (deploy novo,
+# app dormindo, reciclagem do conteiner): sem isto, avaliacoes do time, analises e o historico do Ploomes se perdem.
+# O app restaura a copia mais recente ao subir e envia uma nova alguns segundos depois de cada gravacao.
+# So liga com DB_BACKUP_TOKEN definido (segredo do deploy). Ver app/database/backup.py e docs/DEPLOY_STREAMLIT.md.
+repo: joao-ncr/icp---asimov-     # repositorio PRIVADO que guarda as copias (release, sem historico no git)
+release_tag: db-backup
+asset_prefix: asimov-db-          # nome do arquivo: asimov-db-AAAAMMDDTHHMMSSZ.sqlite.gz (ordem alfabetica = cronologica)
+keep: 3                           # copias mantidas (as anteriores servem para voltar atras se algo der errado)
+debounce_s: 30                    # junta gravacoes seguidas num unico envio
+max_mb: 200                       # teto de download na restauracao

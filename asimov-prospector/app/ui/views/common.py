@@ -71,3 +71,20 @@ def learning_panel(compact: bool = False) -> dict:
         st.caption("Avalie os leads do ranking. Com avaliações suficientes, o sistema passa a ajustar o ranking sozinho.")
     st.caption(f"Geração de novos leads com os parâmetros aprendidos: a partir de {info['lead_generation_min_labels']} avaliações.")
     return info
+
+
+def backup_notice(user: User) -> None:
+    """So para administradores e so no deploy (com copia de seguranca configurada): estado da copia do banco."""
+    if not user.is_admin:
+        return
+    status = data.persistence_status()
+    if status["outcome"] == "disabled":
+        return
+    if status["outcome"] == "failed":
+        st.error("Não foi possível restaurar a cópia de segurança do banco. Para não sobrescrever a cópia boa, nada será "
+                 "salvo no GitHub até o app ser reiniciado (Manage app → Reboot).")
+        return
+    if status["last_error"]:
+        st.warning(f"Cópia de segurança: {status['last_error']}")
+    elif status["last_ok_at"]:
+        st.caption(f"Cópia de segurança do banco: {status['last_ok_at'][:16].replace('T', ' ')} (UTC).")

@@ -68,6 +68,12 @@ def seconds_until_allowed(last_finished_at: str | None, moment: datetime, interv
     return max(0, int(interval_s - (moment - finished).total_seconds()))
 
 
+def sync_is_due(last: dict | None, moment: datetime, after_hours: float) -> bool:
+    """Sincronizacao automatica: nunca sincronizado, ou a ultima sincronizacao bem-sucedida e mais antiga que a janela."""
+    finished = _parse_ts((last or {}).get("finished_at"))
+    return finished is None or moment - finished >= timedelta(hours=after_hours)
+
+
 def incremental_since(last: dict | None, overlap_hours: int) -> str | None:
     """None = sincronizacao completa (primeira vez). Senao, o cursor anterior menos a janela de sobreposicao."""
     cursor = _parse_ts((last or {}).get("cursor"))

@@ -13,7 +13,7 @@ from app.discovery.dedup import upsert_org
 from app.integrations.ploomes import repository as repo
 from app.integrations.ploomes.client import API_HOST, PloomesClient, PloomesContractError, PloomesUnavailable
 from app.integrations.ploomes.mapping import custom_value, forbidden_fields, loss_category
-from app.integrations.ploomes.sync import SyncTooSoon, run_sync, seconds_until_allowed
+from app.integrations.ploomes.sync import SyncTooSoon, run_sync, seconds_until_allowed, sync_is_due
 from app.models.schemas import Candidate
 from app.pipeline import FixtureSource, run_pipeline
 
@@ -223,3 +223,10 @@ def test_sync_interval_math():
     assert seconds_until_allowed(None, moment, 300) == 0
     assert seconds_until_allowed("2026-11-04T11:58:00+00:00", moment, 300) == 180
     assert seconds_until_allowed("2026-11-04T11:00:00+00:00", moment, 300) == 0
+
+
+def test_auto_sync_runs_when_never_synced_or_stale():
+    moment = datetime(2026, 11, 6, 12, 0, tzinfo=timezone.utc)
+    assert sync_is_due(None, moment, 12)
+    assert sync_is_due({"finished_at": "2026-11-05T23:00:00+00:00"}, moment, 12)
+    assert not sync_is_due({"finished_at": "2026-11-06T09:00:00+00:00"}, moment, 12)

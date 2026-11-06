@@ -7,6 +7,8 @@ api:
   max_retries: 3                 # so para 429/5xx e falhas de transporte
   min_sync_interval_s: 300       # intervalo minimo entre sincronizacoes (protege a cota da API e cliques repetidos)
   incremental_overlap_hours: 24  # janela de sobreposicao do cursor incremental (LastUpdateDate)
+  # Ao subir o app (ex.: deploy acordando), sincroniza sozinho em segundo plano se a ultima sincronizacao tiver mais que isto.
+  auto_sync_after_hours: 12
 
 company_type_id: 1               # Contacts.TypeId: 1 = empresa, 2 = pessoa (pessoas nunca sao lidas)
 person_type_id: 2

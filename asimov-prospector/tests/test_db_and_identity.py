@@ -70,6 +70,16 @@ def test_platform_hosts_are_not_company_identity(conn):
     assert conn.execute("SELECT domain FROM organization WHERE id=?", (a,)).fetchone()["domain"] is None
 
 
+def test_an_email_in_the_website_field_is_not_mistaken_for_the_company_domain():
+    # Campo "Website" do Ploomes as vezes vem preenchido com um e-mail; sem essa checagem, urlparse le
+    # "fulano@gmail.com" como usuario@host e devolveria "gmail.com" como se fosse o site da empresa.
+    from app.core.utils import norm_domain
+    assert norm_domain("fulano@gmail.com") is None
+    assert norm_domain("contato@empresa.com.br") is None
+    assert norm_domain("http://fulano@gmail.com") is None
+    assert norm_domain("empresa.com.br") == "empresa.com.br"
+
+
 def test_social_only_lead_is_inconclusive_without_crawl(conn):
     conn.execute("INSERT INTO organization(name,name_norm,domain) VALUES('Legado','legado','instagram.com')")    # dado antigo no banco
     class Boom:

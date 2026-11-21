@@ -29,7 +29,12 @@ def norm_domain(url_or_domain: str | None) -> str | None:
     u = url_or_domain.strip()
     if "://" not in u:
         u = "http://" + u
-    host = (urlparse(u).hostname or "").lower()
+    parsed = urlparse(u)
+    if parsed.username:
+        # Campo de site preenchido com e-mail (ex.: "fulano@gmail.com" no Website do Ploomes): sem o "://", urlparse
+        # le "fulano@gmail.com" como usuario@host e devolveria "gmail.com" como se fosse o site da empresa.
+        return None
+    host = (parsed.hostname or "").lower()
     host = host[4:] if host.startswith("www.") else host
     return host or None
 

@@ -9,10 +9,18 @@ from app.ui import data
 
 LEVEL_ICONS = {"boa": "👍", "neutra": "😐", "ruim": "👎"}
 NOT_ANALYZED = {"error", "blocked", "inconclusive", "excluded"}
+# organization.source (app/discovery/dedup.py) agrupado para exibição: "ploomes" e "discovery_cnpj" têm rótulo
+# próprio; qualquer outro valor (lista própria, empresa única, seeds) é "fora do Ploomes".
+ORIGIN_LABELS = {"ploomes": "📇 Ploomes", "discovery_cnpj": "🧭 Lead gerado (CNPJ)"}
+ORIGIN_DEFAULT = "📄 Fora do Ploomes"
 
 
 def service_name(service_id: str | None) -> str:
     return SERVICE_NAMES.get(service_id, service_id or "—")
+
+
+def origin_text(source: str | None) -> str:
+    return ORIGIN_LABELS.get(source, ORIGIN_DEFAULT)
 
 
 def level_text(level: str | None) -> str:

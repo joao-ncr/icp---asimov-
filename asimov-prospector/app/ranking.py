@@ -7,7 +7,7 @@ from app.scoring.score import AXES
 FINAL = "FINAL"
 
 _QUERY = """
-SELECT o.id org_id, o.name, o.domain, o.segment, a.id analysis_id, a.run_id, a.result, a.created_at,
+SELECT o.id org_id, o.name, o.domain, o.segment, o.source, a.id analysis_id, a.run_id, a.result, a.created_at,
        (SELECT quality FROM human_feedback WHERE org_id=o.id ORDER BY id DESC LIMIT 1) feedback
 FROM analysis a
 JOIN organization o ON o.id=a.org_id
@@ -33,7 +33,7 @@ def ranking(conn, run_id: int | None = None, service: str | None = None, limit: 
     for rank, r in enumerate(conn.execute(sql, params), 1):
         res = json.loads(r["result"])
         rows.append({"rank": rank, "org_id": r["org_id"], "analysis_id": r["analysis_id"], "name": r["name"], "domain": r["domain"],
-                     "segment": r["segment"], "score": res["service_scores"][service] if service else res["final"], "final": res["final"],
+                     "segment": r["segment"], "source": r["source"], "score": res["service_scores"][service] if service else res["final"], "final": res["final"],
                      "b1": res["baseline_b1"], "best_service": res["best_service"], "service_scores": res["service_scores"],
                      "evidence_multiplier": res["evidence_multiplier"], "reactivation": res.get("reactivation_candidate", False),
                      "explanation": res["explanation"], "feedback": r["feedback"]})

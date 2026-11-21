@@ -6,13 +6,14 @@ import streamlit as st
 from app.core.auth import User
 from app.database.run_lock import RunInProgress
 from app.ui import data, theme
-from app.ui.views.common import RunProgress, explain_busy, learning_panel, level_text, service_name
+from app.ui.views.common import RunProgress, explain_busy, learning_panel, level_text, origin_text, service_name
 
 
 def table(rows: list[dict]) -> pd.DataFrame:
     return pd.DataFrame([{
         "#": r["rank"], "Empresa": r["name"], "Pontuação": round(r["score"], 1), "Oportunidade": service_name(r["best_service"]),
-        "Hipótese": r["explanation"].get("hypothesis") or "—", "Avaliação": level_text(r["feedback"]), "Site": r["domain"],
+        "Hipótese": r["explanation"].get("hypothesis") or "—", "Avaliação": level_text(r["feedback"]), "Origem": origin_text(r["source"]),
+        "Site": r["domain"],
     } for r in rows])
 
 
@@ -46,7 +47,7 @@ def render(service: str, user: User) -> None:
     event = st.dataframe(df, hide_index=True, width="stretch", height=min(650, 70 + len(df) * 36),
                          on_select="rerun", selection_mode="single-row", key="ranking_table",
                          column_config={"#": st.column_config.NumberColumn(width="small"), "Oportunidade": st.column_config.TextColumn(width="medium"),
-                                        "Hipótese": st.column_config.TextColumn(width="large")})
+                                        "Hipótese": st.column_config.TextColumn(width="large"), "Origem": st.column_config.TextColumn(width="small")})
     picked = event.selection.rows
     if picked:
         row = shown[picked[0]]

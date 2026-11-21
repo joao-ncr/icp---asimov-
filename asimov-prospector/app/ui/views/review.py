@@ -1,10 +1,11 @@
 """Tela 'Avaliar': evidências de uma empresa e a avaliação do time em 3 níveis (a base do aprendizado)."""
 from __future__ import annotations
+import pandas as pd
 import streamlit as st
 from app.core.auth import LOCAL_USER, User
 from app.feedback.store import LEVEL_LABELS
 from app.ui import data, theme
-from app.ui.views.common import LEVEL_ICONS, level_text, service_name
+from app.ui.views.common import LEVEL_ICONS, level_text, service_name, signal_category_text
 
 
 def _next_pending(rows: list[dict], current_org_id: int) -> int | None:
@@ -77,8 +78,16 @@ def _evidence(pick: dict) -> None:
     evidence = data.evidence_for(pick["analysis_id"])
     if evidence.empty:
         st.info("Nenhuma evidência verificável suficiente foi registrada.")
-    else:
-        st.dataframe(evidence, hide_index=True, width="stretch")
+        return
+    table = pd.DataFrame({
+        "Sinal": evidence["signal_code"].map(signal_category_text),
+        "O que foi encontrado": evidence["claim"],
+        "Trecho da página": evidence["source_text"],
+        "Fonte": evidence["source_url"],
+        "Confiança": (evidence["confidence"] * 100).round().astype(int).astype(str) + "%",
+    })
+    st.dataframe(table, hide_index=True, width="stretch",
+                 column_config={"Fonte": st.column_config.LinkColumn(display_text="Abrir")})
 
 
 def _evaluation_form(pick: dict, rows: list[dict], user: User) -> None:

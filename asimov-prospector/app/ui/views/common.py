@@ -4,6 +4,7 @@ import streamlit as st
 from app.core.auth import User
 from app.database.run_lock import RunInProgress
 from app.feedback.store import LEVEL_LABELS
+from app.intelligence.signals import taxonomy
 from app.scoring.explain import SERVICE_NAMES
 from app.ui import data
 
@@ -13,6 +14,12 @@ NOT_ANALYZED = {"error", "blocked", "inconclusive", "excluded"}
 # próprio; qualquer outro valor (lista própria, empresa única, seeds) é "fora do Ploomes".
 ORIGIN_LABELS = {"ploomes": "📇 Ploomes", "discovery_cnpj": "🧭 Lead gerado (CNPJ)"}
 ORIGIN_DEFAULT = "📄 Fora do Ploomes"
+# signal.category (app/config/signals.yaml) traduzido para o time comercial; o código do sinal em si
+# (ex. DATA_SYSTEMS_FRAGMENTED) é jargão interno e não deve aparecer na tela de Avaliar.
+CATEGORY_LABELS = {"AUTOMATION_SIGNAL": "Automação", "COLLABORATION_SIGNAL": "Colaboração entre áreas",
+                    "DATA_SIGNAL": "Dados", "DIGITAL_SIGNAL": "Maturidade digital", "GROWTH_SIGNAL": "Crescimento",
+                    "MANAGEMENT_SIGNAL": "Gestão", "MOBILE_SIGNAL": "Aplicativo/mobile", "OPERATIONAL_SIGNAL": "Operação",
+                    "TECHNOLOGY_SIGNAL": "Tecnologia"}
 
 
 def service_name(service_id: str | None) -> str:
@@ -21,6 +28,11 @@ def service_name(service_id: str | None) -> str:
 
 def origin_text(source: str | None) -> str:
     return ORIGIN_LABELS.get(source, ORIGIN_DEFAULT)
+
+
+def signal_category_text(signal_code: str) -> str:
+    category = taxonomy().get(signal_code, {}).get("category")
+    return CATEGORY_LABELS.get(category, "Outro sinal")
 
 
 def level_text(level: str | None) -> str:

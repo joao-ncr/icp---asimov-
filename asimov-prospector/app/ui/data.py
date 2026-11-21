@@ -144,6 +144,19 @@ def discovery_feed_configured() -> bool:
     return discovery_feed.is_configured(get_settings(), discovery_generation.rules().get("feed"))
 
 
+FEED_STATUS_CACHE_TTL_S = 600    # evita bater na API do GitHub a cada rerun do Streamlit
+
+
+@st.cache_data(show_spinner=False, ttl=FEED_STATUS_CACHE_TTL_S)
+def discovery_feed_status() -> discovery_feed.FeedStatus | str:
+    """Metadados da ultima coleta do GitHub Actions (ver .github/workflows/cnpj-feed.yml), para avisar na tela mesmo
+    sem gerar candidatos. Devolve a mensagem de erro (str) em vez de levantar, para nao falhar a tela toda."""
+    try:
+        return discovery_feed.check_latest(get_settings(), discovery_generation.rules().get("feed"))
+    except discovery_feed.FeedError as exc:
+        return str(exc)
+
+
 def run_discovery_from_feed(triggered_by: str) -> discovery_generation.GenerationReport:
     """Baixa a lista mensal de CNPJ publicada pelo GitHub Actions e cria candidatos pendentes de aprovação.
     O download acontece antes de abrir o banco, para não segurar conexão durante a rede."""

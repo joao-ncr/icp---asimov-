@@ -6,7 +6,10 @@ import streamlit as st
 from app.core.auth import User
 from app.database.run_lock import RunInProgress
 from app.ui import data, theme
-from app.ui.views.common import RunProgress, explain_busy, learning_panel, level_text, origin_text, service_name
+from app.ui.views.common import ORIGIN_DEFAULT, ORIGIN_LABELS, RunProgress, explain_busy, learning_panel, level_text, origin_text, service_name
+
+ORIGIN_FILTER_ALL = "Todas as origens"
+ORIGIN_FILTER_OPTIONS = [ORIGIN_FILTER_ALL, *ORIGIN_LABELS.values(), ORIGIN_DEFAULT]
 
 
 def table(rows: list[dict]) -> pd.DataFrame:
@@ -40,8 +43,10 @@ def render(service: str, user: User) -> None:
         st.info("Ainda não há empresas ranqueadas. Faça uma análise primeiro.")
         return
 
-    only_pending = st.checkbox("Mostrar só as que ainda não foram avaliadas")
-    shown = [r for r in rows if not (only_pending and r["feedback"])]
+    a, b = st.columns([2, 1])
+    only_pending = a.checkbox("Mostrar só as que ainda não foram avaliadas")
+    origin_pick = b.selectbox("Origem", ORIGIN_FILTER_OPTIONS, help="Isola, por exemplo, só os leads gerados pelo GitHub Actions (CNPJ aberto).")
+    shown = [r for r in rows if not (only_pending and r["feedback"]) and (origin_pick == ORIGIN_FILTER_ALL or origin_text(r["source"]) == origin_pick)]
     st.caption(f"{len(shown)} de {len(rows)} empresas · {sum(bool(r['feedback']) for r in rows)} já avaliadas")
     df = table(shown)
     event = st.dataframe(df, hide_index=True, width="stretch", height=min(650, 70 + len(df) * 36),

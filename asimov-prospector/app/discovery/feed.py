@@ -24,6 +24,13 @@ class FeedFile:
     content: bytes
 
 
+@dataclass(frozen=True)
+class FeedStatus:
+    """Metadados da release publicada pelo GitHub Actions, sem baixar o CSV (para o aviso na tela 'Nova análise')."""
+    published_at: str
+    size_mb: float
+
+
 def is_configured(settings: Settings, feed_cfg: dict | None) -> bool:
     return bool(settings.cnpj_feed_token and feed_cfg and feed_cfg.get("repo"))
 
@@ -53,6 +60,21 @@ def fetch_latest(settings: Settings, feed_cfg: dict | None, transport: httpx.Bas
     except httpx.HTTPError as exc:
         raise FeedError(f"Sem conexão com o GitHub para buscar a lista de CNPJ ({exc.__class__.__name__}).") from exc
     return FeedFile(label=f"{asset['name']} (publicada em {asset.get('updated_at', '?')})", content=content)
+
+
+def check_latest(settings: Settings, feed_cfg: dict | None, transport: httpx.BaseTransport | None = None) -> FeedStatus:
+    """So os metadados da release (sem baixar o CSV): para avisar na tela quando foi a ultima coleta do GitHub Actions."""
+    if not is_configured(settings, feed_cfg):
+        raise FeedError("Busca automática não configurada: defina CNPJ_FEED_TOKEN no .env (ver README).")
+    headers = {"Authorization": f"Bearer {settings.cnpj_feed_token}", "X-GitHub-Api-Version": GITHUB_API_VERSION,
+               "User-Agent": settings.user_agent}
+    try:
+        with httpx.Client(base_url=GITHUB_API, headers=headers, timeout=TIMEOUT_S, transport=transport) as client:
+            release = _get_json(client, f"/repos/{feed_cfg['repo']}/releases/tags/{feed_cfg['release_tag']}")
+            asset = find_asset(release, feed_cfg["asset"])
+    except httpx.HTTPError as exc:
+        raise FeedError(f"Sem conexão com o GitHub para buscar a lista de CNPJ ({exc.__class__.__name__}).") from exc
+    return FeedStatus(published_at=asset.get("updated_at", "?"), size_mb=round(asset.get("size", 0) / BYTES_PER_MB, 1))
 
 
 def _get_json(client: httpx.Client, path: str) -> dict:

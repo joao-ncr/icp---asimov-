@@ -145,6 +145,7 @@ def _discovery_source(service: str, user: User) -> None:
         st.success(message)
     overview = data.discovery_overview()
     _last_generation(overview["last"])
+    _feed_status()
     if user.is_admin:
         _generation_actions(user)
     else:
@@ -159,6 +160,15 @@ def _last_generation(last: dict | None) -> None:
         st.warning(f"A última geração não terminou: {last['error']}")
     elif last["status"] == "ok":
         st.caption(f"Última geração: {_when(last['finished_at'])} (UTC), por {last['triggered_by']}.")
+
+
+def _feed_status() -> None:
+    """Visivel para todo o time: a coleta roda sozinha (GitHub Actions, dia 20), sem precisar clicar em nada aqui."""
+    status = data.discovery_feed_status()
+    if isinstance(status, str):
+        st.caption(f"📅 A lista é atualizada automaticamente todo dia 20, direto da base da Receita Federal (GitHub Actions). {status}")
+    else:
+        st.caption(f"📅 Coleta automática todo dia 20 (GitHub Actions): última lista publicada em {_when(status.published_at)} (UTC), {status.size_mb} MB.")
 
 
 def _generation_actions(user: User) -> None:

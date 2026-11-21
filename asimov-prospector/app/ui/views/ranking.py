@@ -14,9 +14,9 @@ ORIGIN_FILTER_OPTIONS = [ORIGIN_FILTER_ALL, *ORIGIN_LABELS.values(), ORIGIN_DEFA
 
 def table(rows: list[dict]) -> pd.DataFrame:
     return pd.DataFrame([{
-        "#": r["rank"], "Empresa": r["name"], "Pontuação": round(r["score"], 1), "Oportunidade": service_name(r["best_service"]),
-        "Hipótese": r["explanation"].get("hypothesis") or "—", "Avaliação": level_text(r["feedback"]), "Origem": origin_text(r["source"]),
-        "Site": r["domain"],
+        "#": r["rank"], "Empresa": r["name"], "Origem": origin_text(r["source"]), "Pontuação": round(r["score"], 1),
+        "Oportunidade": service_name(r["best_service"]), "Hipótese": r["explanation"].get("hypothesis") or "—",
+        "Avaliação": level_text(r["feedback"]), "Site": r["domain"],
     } for r in rows])
 
 
